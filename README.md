@@ -39,9 +39,27 @@ see the trade-off ledger entry below. To deploy:
 
 ## 2-minute reviewer walkthrough
 
-_Filled in during Slice 8 once there's a live URL — see that section of this README for the
-step-by-step reviewer flow (signup → widget chat → inbox → email thread → reply → KB search →
-summarize)._
+Once deployed (see Deployment) and seeded (`npm run db:seed`):
+
+1. **Sign up** at `/signup` — creates a new workspace and you as its owner in one step, or **sign in**
+   with the seeded demo accounts (`owner@acme.test` / `agent@acme.test`, password
+   `helpdesk-demo-123`) to see a workspace with real history already in it.
+2. **Open `/demo`** in another tab — a fake marketing page with the real widget embedded via
+   `<script src="/widget.js" data-workspace="...">`. Click the chat bubble, send a message.
+3. **Watch it land in the inbox** at `/app/inbox` (same account, or the seeded `agent@acme.test`) —
+   the conversation appears and updates live, no refresh, over the same Realtime broadcast channel
+   the widget just published to.
+4. **Email the support address** (`INBOUND_EMAIL_ADDRESS` from your Resend setup) from any mail
+   client. It threads into the same inbox as a `channel: email` conversation — same list, same
+   detail pane, just a different badge.
+5. **Reply from the dashboard** to that email conversation. It arrives in your inbox as a threaded
+   reply (`In-Reply-To`/`References` set, subject prefixed `Re:` exactly once) — reply again from
+   your email client and watch it thread back into the same conversation.
+6. **Search the public knowledge base** at `/kb/acme` (or your workspace's slug) — try a query that
+   only partially matches an article title; ranked full-text search still finds it.
+7. **Click "Summarize"** on any conversation with a few messages in `/app/inbox` — see the
+   AI-generated summary, sentiment badge, and suggested next action appear. Click "AI draft" to see
+   a full reply drafted into the composer, unsent, waiting for review.
 
 ## Architecture overview
 
@@ -143,7 +161,6 @@ Every non-obvious decision, logged at the moment it's made — not reconstructed
 | Wildcard subdomain routing implemented as a `Host`-header rewrite in `proxy.ts`, not a Vercel/DNS-only feature | Rely entirely on Vercel's wildcard domain config with no application-level routing | Vercel's wildcard domain gets requests to the app; something still has to map `acme.yourdomain.com` → workspace `acme`'s KB. That mapping is application logic (compare `Host` against `NEXT_PUBLIC_APP_URL`, rewrite to `/kb/{slug}`), independent of and testable without any DNS being configured — verified locally via `curl -H "Host: ..."`. |
 | Postgres full-text search (`tsvector` + GIN index) for KB search | External search service (Algolia, Meilisearch, Elasticsearch) | Zero extra infra, one migration, ranked results via `ts_rank`. Adequate at KB-article scale; would not be the right call at 100k+ articles. |
 | AI summary cache keyed on `generated_for_message_at` | Time-based TTL (e.g. "regenerate every 10 minutes") | Correctness should track conversation activity, not wall-clock time. A summary goes stale exactly when a new message arrives — never sooner (wasted API cost), never later (stale summary shown as current). |
-| Custom domains: wildcard `{slug}.<domain>` for public KB only | Full self-serve custom domains (CNAME → TXT verify → cert issuance → host-header routing) | Cert provisioning and DNS verification UX is a multi-day feature on its own; descoped in favor of the 7 mandatory features. See the Slice 7 section below for the full design if built out. |
 
 ## Descoped (explicitly, per spec "Hard Don'ts")
 
@@ -153,4 +170,22 @@ webhooks, multi-language KB, full self-serve custom domains. Each is a deliberat
 
 ## With one more week
 
-_Filled in during Slice 8._
+- **Full self-serve custom domains** — the design is in the Custom domains section above; the work
+  is the verification UX and Vercel Domains API integration.
+- **Workspace switcher** — the schema already supports a user belonging to multiple workspaces
+  (`workspace_members` is many-to-many); the app just always picks the first one. Add a switcher and
+  a `?workspace=` (or subdomain-based) active-workspace resolution.
+- **Real invitation emails** — replace the pending-row-linked-on-signup mechanism with an actual
+  Resend email containing a signup link pre-filled with the invited email.
+- **File attachments** — both the widget and the email pipeline currently handle text/HTML only.
+  Resend supports attachments on inbound/outbound; the widget would need a storage bucket (Supabase
+  Storage) and an upload UI.
+- **Broader test coverage** — the 48-hour budget went entirely into unit-testing the one
+  highest-risk pure function (email threading), per the spec's explicit trade-off. The next layer
+  worth testing: RLS policies themselves (pgTAP or a script that asserts cross-workspace queries
+  return zero rows), and an integration test for the inbound-webhook idempotency path.
+- **Rate limiting & abuse controls on `/api/widget/*`** — currently any visitor can hit the init/send
+  routes at will. A real deployment needs per-IP or per-contact rate limiting before the public widget
+  goes live on a real marketing site.
+- **SLA tracking / analytics / outbound webhooks** — named descopes in the original spec; genuinely
+  separate features, not extensions of anything already built.
