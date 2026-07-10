@@ -10,21 +10,25 @@ export interface WorkspaceContext {
   role: WorkspaceRole;
 }
 
-// Single source of truth for "who is this agent and which workspace/role are they acting as,"
-// re-derived from the DB on every call (never trusted from client-passed props). Used by every
-// server action and server component under /app.
+export type WorkspaceContextLookup =
+  | { status: "unauthenticated" }
+  | { status: "no_workspace" }
+  | { status: "ok"; context: WorkspaceContext };
+
+// Shared core: re-derived from the DB on every call (never trusted from client-passed props), used
+// by both the page-facing requireWorkspaceContext (below) and the API-route-facing
+// getApiWorkspaceContext (lib/auth/api-session.ts) — they differ only in how they fail (redirect vs.
+// JSON error response), not in how they look up "who is this."
 // why single-workspace: this build assumes one workspace per user (the common case for a support
 // team). A workspace switcher for users in multiple workspaces is a documented "one more week" item.
-export async function requireWorkspaceContext(): Promise<WorkspaceContext> {
+export async function fetchWorkspaceContext(): Promise<WorkspaceContextLookup> {
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) return { status: "unauthenticated" };
 
   const { data: membership } = await supabase
     .from("workspace_members")
@@ -33,16 +37,28 @@ export async function requireWorkspaceContext(): Promise<WorkspaceContext> {
     .limit(1)
     .maybeSingle();
 
-  if (!membership || !membership.workspaces) {
-    redirect("/onboarding");
-  }
+  if (!membership || !membership.workspaces) return { status: "no_workspace" };
 
   return {
-    userId: user.id,
-    userEmail: user.email!,
-    workspace: membership.workspaces as unknown as Workspace,
-    role: membership.role as WorkspaceRole,
+    status: "ok",
+    context: {
+      userId: user.id,
+      userEmail: user.email!,
+      workspace: membership.workspaces as unknown as Workspace,
+      role: membership.role as WorkspaceRole,
+    },
   };
+}
+
+export async function requireWorkspaceContext(): Promise<WorkspaceContext> {
+  const lookup = await fetchWorkspaceContext();
+  if (lookup.status === "unauthenticated") {
+    redirect("/login");
+  }
+  if (lookup.status === "no_workspace") {
+    redirect("/onboarding");
+  }
+  return lookup.context;
 }
 
 const ROLE_RANK: Record<WorkspaceRole, number> = { agent: 0, admin: 1, owner: 2 };

@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, escapeHtml } from "@/lib/utils";
 
 // Shared rich-text composer for both channels — chat only uses the plain-text extraction, email uses
 // both text and HTML (see sendAgentReply). Built once here rather than once per channel; see README
@@ -14,11 +15,14 @@ export function ReplyComposer({
   onTyping,
   sending,
   placeholder = "Write a reply…",
+  draftContent,
 }: {
   onSend: (text: string, html: string) => void;
   onTyping?: () => void;
   sending: boolean;
   placeholder?: string;
+  /** AI-generated draft text to inject into the editor — see components/inbox/ai-draft-button.tsx. */
+  draftContent?: string | null;
 }) {
   const editor = useEditor({
     extensions: [StarterKit],
@@ -38,6 +42,18 @@ export function ReplyComposer({
     },
     onUpdate: () => onTyping?.(),
   });
+
+  const consumedDraftRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!editor || !draftContent || draftContent === consumedDraftRef.current) return;
+    consumedDraftRef.current = draftContent;
+    editor.commands.setContent(
+      draftContent
+        .split(/\n{2,}/)
+        .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
+        .join(""),
+    );
+  }, [editor, draftContent]);
 
   function handleSend() {
     if (!editor || editor.isEmpty || sending) return;

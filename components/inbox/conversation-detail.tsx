@@ -6,6 +6,8 @@ import { conversationChannelName } from "@/lib/realtime/channels";
 import { sendAgentReply, notifyAgentTyping, markConversationRead } from "@/lib/actions/messages";
 import { assignConversation, updateConversationStatus } from "@/lib/actions/conversations";
 import { ReplyComposer } from "@/components/inbox/reply-composer";
+import { SummarizePanel } from "@/components/inbox/summarize-panel";
+import { AiDraftButton } from "@/components/inbox/ai-draft-button";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { ConversationWithContact, Message, ConversationStatus } from "@/lib/types";
 import {
@@ -32,6 +34,8 @@ export function ConversationDetail({
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [contactTyping, setContactTyping] = useState(false);
+  const [draft, setDraft] = useState<string | null>(null);
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastTypingSentAtRef = useRef(0);
@@ -104,6 +108,8 @@ export function ConversationDetail({
     const result = await sendAgentReply(conversationId, text, html);
     if (result.error) {
       setSendError(result.error);
+    } else {
+      setShowDraftBanner(false);
     }
     setSending(false);
   }
@@ -167,6 +173,8 @@ export function ConversationDetail({
         </div>
       </header>
 
+      <SummarizePanel conversationId={conversationId} />
+
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.sender_type === "agent" ? "justify-end" : "justify-start"}`}>
@@ -183,11 +191,24 @@ export function ConversationDetail({
       </div>
 
       {sendError && <p className="px-3 text-sm text-destructive">{sendError}</p>}
+      <div className="flex items-center justify-between px-3 pt-3">
+        <AiDraftButton
+          conversationId={conversationId}
+          onDraft={(text) => {
+            setDraft(text);
+            setShowDraftBanner(true);
+          }}
+        />
+        {showDraftBanner && (
+          <span className="text-xs text-muted-foreground">AI draft — review before sending</span>
+        )}
+      </div>
       <ReplyComposer
         onSend={handleSend}
         onTyping={handleTyping}
         sending={sending}
         placeholder={conversation.channel === "email" ? "Write an email reply…" : "Write a reply…"}
+        draftContent={draft}
       />
     </div>
   );
