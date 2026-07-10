@@ -5,10 +5,9 @@ import { createClient } from "@/lib/supabase/client";
 import { conversationChannelName } from "@/lib/realtime/channels";
 import { sendAgentReply, notifyAgentTyping, markConversationRead } from "@/lib/actions/messages";
 import { assignConversation, updateConversationStatus } from "@/lib/actions/conversations";
+import { ReplyComposer } from "@/components/inbox/reply-composer";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { ConversationWithContact, Message, ConversationStatus } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -30,8 +29,8 @@ export function ConversationDetail({
 }) {
   const [conversation, setConversation] = useState<ConversationWithContact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [contactTyping, setContactTyping] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -99,14 +98,12 @@ export function ConversationDetail({
     notifyAgentTyping(conversationId);
   }, [conversationId]);
 
-  async function handleSend() {
-    const body = reply.trim();
-    if (!body || sending) return;
+  async function handleSend(text: string, html: string) {
     setSending(true);
-    setReply("");
-    const result = await sendAgentReply(conversationId, body);
+    setSendError(null);
+    const result = await sendAgentReply(conversationId, text, html);
     if (result.error) {
-      setReply(body);
+      setSendError(result.error);
     }
     setSending(false);
   }
@@ -185,26 +182,13 @@ export function ConversationDetail({
         {contactTyping && <p className="text-xs text-muted-foreground">{contactLabel} is typing…</p>}
       </div>
 
-      <div className="flex gap-2 border-t p-3">
-        <Textarea
-          value={reply}
-          onChange={(e) => {
-            setReply(e.target.value);
-            handleTyping();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          placeholder="Write a reply…"
-          className="min-h-[44px]"
-        />
-        <Button onClick={handleSend} disabled={!reply.trim() || sending}>
-          Send
-        </Button>
-      </div>
+      {sendError && <p className="px-3 text-sm text-destructive">{sendError}</p>}
+      <ReplyComposer
+        onSend={handleSend}
+        onTyping={handleTyping}
+        sending={sending}
+        placeholder={conversation.channel === "email" ? "Write an email reply…" : "Write a reply…"}
+      />
     </div>
   );
 }

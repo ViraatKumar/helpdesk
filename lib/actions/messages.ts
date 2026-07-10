@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { requireWorkspaceContext } from "@/lib/auth/session";
 import { broadcast } from "@/lib/realtime/broadcast";
 import { conversationChannelName, workspaceChannelName } from "@/lib/realtime/channels";
+import { sendReplyEmail } from "@/lib/email/send";
+import { buildReplySubject, buildOutboundReferences } from "@/lib/email/threading";
+import { escapeHtml } from "@/lib/utils";
 
 export interface SendReplyResult {
   error?: string;
@@ -11,14 +14,66 @@ export interface SendReplyResult {
 
 // Agent replies go through the user's own RLS-scoped session (messages_insert_agents policy), not
 // the service role — this is a real agent acting in their own workspace, so there's no reason to
-// bypass the trust boundary the way the anonymous widget routes have to.
-export async function sendAgentReply(conversationId: string, body: string): Promise<SendReplyResult> {
+// bypass the trust boundary the way the anonymous widget routes have to. The conversation's channel
+// decides the delivery mechanism (Resend vs. broadcast-only); the unified inbox composer is the same
+// component either way — see components/inbox/reply-composer.tsx.
+export async function sendAgentReply(
+  conversationId: string,
+  body: string,
+  bodyHtml?: string,
+): Promise<SendReplyResult> {
   const context = await requireWorkspaceContext();
   if (!body.trim()) {
     return { error: "Message cannot be empty." };
   }
 
   const supabase = await createClient();
+  const { data: conversation } = await supabase
+    .from("conversations")
+    .select("*, contact:contacts(*)")
+    .eq("id", conversationId)
+    .single();
+
+  if (!conversation) {
+    return { error: "Conversation not found." };
+  }
+
+  let emailMessageId: string | null = null;
+  let emailInReplyTo: string | null = null;
+
+  if (conversation.channel === "email") {
+    if (!conversation.contact?.email) {
+      return { error: "This contact has no email address on file." };
+    }
+
+    const { data: priorMessages } = await supabase
+      .from("messages")
+      .select("email_message_id")
+      .eq("conversation_id", conversationId)
+      .not("email_message_id", "is", null)
+      .order("created_at", { ascending: true });
+
+    const priorIds = (priorMessages ?? [])
+      .map((m) => m.email_message_id)
+      .filter((id): id is string => Boolean(id));
+    const { inReplyTo, references } = buildOutboundReferences(priorIds, priorIds.at(-1) ?? null);
+
+    try {
+      const sent = await sendReplyEmail({
+        to: conversation.contact.email,
+        subject: buildReplySubject(conversation.subject),
+        html: bodyHtml || `<p>${escapeHtml(body)}</p>`,
+        text: body,
+        inReplyTo,
+        references,
+      });
+      emailMessageId = sent.messageId;
+      emailInReplyTo = inReplyTo;
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Failed to send email." };
+    }
+  }
+
   const { data: message, error } = await supabase
     .from("messages")
     .insert({
@@ -26,6 +81,9 @@ export async function sendAgentReply(conversationId: string, body: string): Prom
       sender_type: "agent",
       sender_id: context.userId,
       body: body.trim(),
+      body_html: bodyHtml ?? null,
+      email_message_id: emailMessageId,
+      email_in_reply_to: emailInReplyTo,
     })
     .select("*")
     .single();
