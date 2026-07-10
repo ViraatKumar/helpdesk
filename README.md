@@ -55,9 +55,11 @@ non-obvious constraint.
 Trust boundary: every mutation goes through a server route or server action that re-checks workspace
 membership via Supabase RLS. Client-side role checks (hiding an "Invite" button from an `agent`) are
 UX only — the actual enforcement is `is_workspace_member()` in Postgres
-(`supabase/migrations/0005_rls_policies.sql`), checked on every read and write. Two paths bypass RLS
-deliberately, both server-only: the widget message-send route (anonymous contacts have no Supabase
-session) and the inbound email webhook (no session at all) — both use the service-role key, which
+(`supabase/migrations/0005_rls_policies.sql`), checked on every read and write. A handful of paths
+bypass RLS deliberately, all server-only, all read-only or narrowly scoped: the widget message routes
+and the inbound email webhook (anonymous contacts have no Supabase session at all), and the public KB
+site (`/kb/[workspaceSlug]`, resolving a workspace by slug isn't possible under the members-only
+`workspaces` RLS policy for a logged-out visitor). All of them use the service-role key, which
 never reaches the client.
 
 ## Trade-off Ledger
@@ -83,6 +85,8 @@ Every non-obvious decision, logged at the moment it's made — not reconstructed
 | Inbound webhook returns 401 only for signature failures; every other failure (malformed payload, unresolvable workspace, DB error) returns 200 and logs | Return 4xx/5xx for any failure | Email providers retry non-2xx webhook deliveries. A malformed payload will never succeed on retry — returning an error code just produces a retry storm of the same failure. A bad signature is a real security boundary, not a processing error, so it's the one case that isn't swallowed. |
 | Idempotency via the `messages.email_message_id` unique index + catching the Postgres unique-violation error code | Pre-check with a SELECT before INSERT | A pre-check has a race window between two concurrent webhook retries; relying on the unique constraint and catching `23505` is atomic. |
 | `matchInboundEmailToConversation()` takes pre-fetched candidate data (a `Map` and an array) instead of a Supabase client | Pass a DB client into the matcher and let it query as needed | This is the one function the spec mandates unit tests for. Keeping it pure (no I/O, injected clock) means the tests in `tests/email-threading.test.ts` run in milliseconds with zero mocking — the route handler is a thin, untested shell that fetches candidates and calls it. |
+| KB search as a Postgres RPC (`search_kb_articles`) rather than a plain PostgREST filter | `.textSearch()` in the supabase-js query builder | supabase-js's query builder can filter with `.textSearch()` but has no way to order by a computed expression like `ts_rank()`. One RPC does the filter and the ranked ordering in a single round trip. |
+| Public KB pages (`/kb/[workspaceSlug]`) read via the service-role client | Give anonymous visitors an RLS policy on `workspaces` to look up a workspace by slug | The `workspaces` table's only SELECT policy is members-only (`is_workspace_member`), so a logged-out visitor can't resolve a slug to a workspace id at all — there's no row to even apply the published-articles policy against. Rather than opening `workspaces` SELECT to the public (exposing every workspace's existence to enumeration) or maintaining two different Supabase clients per page, these pages use the same service-role pattern as the widget: read-only, and every query still explicitly filters `published = true`. |
 | Postgres full-text search (`tsvector` + GIN index) for KB search | External search service (Algolia, Meilisearch, Elasticsearch) | Zero extra infra, one migration, ranked results via `ts_rank`. Adequate at KB-article scale; would not be the right call at 100k+ articles. |
 | AI summary cache keyed on `generated_for_message_at` | Time-based TTL (e.g. "regenerate every 10 minutes") | Correctness should track conversation activity, not wall-clock time. A summary goes stale exactly when a new message arrives — never sooner (wasted API cost), never later (stale summary shown as current). |
 | Custom domains: wildcard `{slug}.<domain>` for public KB only | Full self-serve custom domains (CNAME → TXT verify → cert issuance → host-header routing) | Cert provisioning and DNS verification UX is a multi-day feature on its own; descoped in favor of the 7 mandatory features. See the Slice 7 section below for the full design if built out. |
