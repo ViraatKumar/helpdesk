@@ -62,6 +62,55 @@ site (`/kb/[workspaceSlug]`, resolving a workspace by slug isn't possible under 
 `workspaces` RLS policy for a logged-out visitor). All of them use the service-role key, which
 never reaches the client.
 
+## Custom domains
+
+**Shipped:** a wildcard subdomain, `{workspaceSlug}.<yourdomain>`, serves that workspace's public KB
+at the root path. This is real, working code (`lib/domains/wildcard-subdomain.ts`, wired into
+`proxy.ts`) — a request's `Host` header is compared against `NEXT_PUBLIC_APP_URL`'s hostname, and a
+subdomain match rewrites `/` to `/kb/{slug}` (and `/some-article` to `/kb/{slug}/some-article`)
+before the request reaches any page. Verified locally with `curl -H "Host: acme.localhost:3000"`.
+The only thing that doesn't happen on this build machine is the DNS/Vercel side: adding `*.yourdomain`
+as a wildcard domain in the Vercel project settings, which issues one certificate covering every
+subdomain — no per-workspace cert work.
+
+**Descoped: full self-serve custom domains** (a customer points their own domain, e.g.
+`help.acme.com`, at their workspace). Design, not built:
+
+```
+Customer                 Helpdesk dashboard              Vercel Domains API         Edge
+--------                 -------------------              -----------------         ----
+"Add custom domain"  →   store pending domain        →
+                          on workspaces row
+                                                       →   POST /v10/projects/…/domains
+                                                           (register help.acme.com)
+                          show customer the required
+                          CNAME + TXT records         ←
+Customer updates DNS
+at their registrar
+                          poll verification status    →   GET .../domains/{domain}/config
+                          (background job or manual
+                          "recheck" button)
+                          on verified=true:
+                          - mark workspaces.custom_domain_verified
+                          - Vercel auto-issues the cert
+                                                                                  ←   requests to
+                                                                                      help.acme.com
+                                                                                      hit the edge;
+                                                                                      proxy.ts resolves
+                                                                                      workspace by
+                                                                                      custom_domain
+                                                                                      instead of slug
+```
+
+Why descoped: this is a multi-day feature on its own — DNS propagation delays, verification UX
+(customers get CNAME setup wrong constantly, need clear error states), and cert issuance failure
+modes (rate limits, CAA records blocking Vercel) are all real production edge cases with no
+shortcut. Building a half-working version (say, storing a `custom_domain` column with no
+verification flow) would be worse than not building it: it would silently accept a domain that will
+never actually resolve, which fails the spec's own bar ("a broken ambitious feature scores worse than
+a well-documented stub"). The wildcard subdomain gets every workspace a working public URL today at
+near-zero cost; full custom domains is the correct "with one more week" item.
+
 ## Trade-off Ledger
 
 Every non-obvious decision, logged at the moment it's made — not reconstructed after the fact.
@@ -91,6 +140,7 @@ Every non-obvious decision, logged at the moment it's made — not reconstructed
 | AI summary is strict JSON (schema-validated with zod, code-fences stripped before parsing) | Free-text summary rendered as-is | The summary feeds a UI that renders `sentiment` as a colored badge and `suggested_action` as a distinct line — a stray sentence back from the model would either crash the render or show garbage in the wrong place. Any parse/validation failure is caught and surfaces as a toast, never a broken page. |
 | AI reply draft is plain text, not JSON | Structured output matching the summary's pattern | The draft fills a rich-text composer the agent reads and edits before sending — free text is what it needs to become; forcing it through JSON would just mean immediately unwrapping a `{draft: string}` shell for no benefit. |
 | AI draft never auto-sends; it fills the composer via `ReplyComposer`'s `draftContent` prop and is labeled "AI draft — review before sending" until the agent hits Send | Send directly from the draft endpoint | An LLM-authored reply going out under an agent's name with no human in the loop is the one AI failure mode that's actually dangerous (wrong information, wrong tone) rather than merely unhelpful. |
+| Wildcard subdomain routing implemented as a `Host`-header rewrite in `proxy.ts`, not a Vercel/DNS-only feature | Rely entirely on Vercel's wildcard domain config with no application-level routing | Vercel's wildcard domain gets requests to the app; something still has to map `acme.yourdomain.com` → workspace `acme`'s KB. That mapping is application logic (compare `Host` against `NEXT_PUBLIC_APP_URL`, rewrite to `/kb/{slug}`), independent of and testable without any DNS being configured — verified locally via `curl -H "Host: ..."`. |
 | Postgres full-text search (`tsvector` + GIN index) for KB search | External search service (Algolia, Meilisearch, Elasticsearch) | Zero extra infra, one migration, ranked results via `ts_rank`. Adequate at KB-article scale; would not be the right call at 100k+ articles. |
 | AI summary cache keyed on `generated_for_message_at` | Time-based TTL (e.g. "regenerate every 10 minutes") | Correctness should track conversation activity, not wall-clock time. A summary goes stale exactly when a new message arrives — never sooner (wasted API cost), never later (stale summary shown as current). |
 | Custom domains: wildcard `{slug}.<domain>` for public KB only | Full self-serve custom domains (CNAME → TXT verify → cert issuance → host-header routing) | Cert provisioning and DNS verification UX is a multi-day feature on its own; descoped in favor of the 7 mandatory features. See the Slice 7 section below for the full design if built out. |

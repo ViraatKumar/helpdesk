@@ -1,7 +1,11 @@
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { rewriteWildcardSubdomain } from "@/lib/domains/wildcard-subdomain";
 
 export async function proxy(request: NextRequest) {
+  const wildcardRewrite = rewriteWildcardSubdomain(request);
+  if (wildcardRewrite) return wildcardRewrite;
+
   return updateSession(request);
 }
 
