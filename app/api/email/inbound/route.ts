@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { verifyResendWebhookSignature } from "@/lib/email/verify-webhook";
-import { parseInboundEmail } from "@/lib/email/parse";
+import { parseInboundWebhook, buildInboundEmail, type ReceivedEmailContent } from "@/lib/email/parse";
+import { fetchReceivedEmailContent } from "@/lib/email/receive";
 import {
   matchInboundEmailToConversation,
   resolveWorkspaceSlugFromRecipient,
@@ -15,8 +16,9 @@ const UNIQUE_VIOLATION = "23505";
 // why every non-retryable failure returns 200: email providers retry webhook deliveries on any
 // non-2xx response. A malformed payload or an email whose workspace we can't resolve will never
 // succeed on retry — returning 4xx/5xx here just produces a retry storm of the same failure. We log
-// and return 200 for those; only signature verification failures (a real security boundary, not a
-// processing error) return a non-200.
+// and return 200 for those. The two exceptions that DO return non-200: signature verification (a
+// real security boundary) and a failed content fetch from Resend's API (transient — a retry can
+// succeed, and the email_message_id unique index makes redelivery idempotent).
 export async function POST(request: Request) {
   const rawBody = await request.text();
 
@@ -39,9 +41,24 @@ export async function POST(request: Request) {
   }
 
   const parsedBody = JSON.parse(rawBody);
-  const email = parseInboundEmail(parsedBody);
-  if (!email) {
+  const envelope = parseInboundWebhook(parsedBody);
+  if (!envelope) {
     console.error("[email/inbound] unrecognized payload shape", parsedBody);
+    return NextResponse.json({ ok: true });
+  }
+
+  // The webhook payload has no body or threading headers — fetch them from Resend's API.
+  let content: ReceivedEmailContent;
+  try {
+    content = await fetchReceivedEmailContent(envelope.emailId);
+  } catch (err) {
+    console.error("[email/inbound] failed to fetch email content", err);
+    return NextResponse.json({ error: "Failed to fetch email content." }, { status: 502 });
+  }
+
+  const email = buildInboundEmail(envelope, content);
+  if (!email) {
+    console.error("[email/inbound] email has no Message-ID", envelope.emailId);
     return NextResponse.json({ ok: true });
   }
 
