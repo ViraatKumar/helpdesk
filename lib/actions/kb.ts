@@ -22,7 +22,7 @@ export async function createArticle(title: string, bodyHtml: string, published: 
     return { error: error?.message ?? "Failed to create article." };
   }
 
-  redirect(`/app/kb/${data.id}`);
+  redirect(`/app/kb`);
 }
 
 export async function updateArticle(
@@ -44,7 +44,8 @@ export async function updateArticle(
   if (error) {
     return { error: error.message };
   }
-  return {};
+  
+  redirect("/app/kb");
 }
 
 export async function deleteArticle(id: string) {
