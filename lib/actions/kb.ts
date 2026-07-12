@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireWorkspaceContext } from "@/lib/auth/session";
 
@@ -67,7 +68,9 @@ export async function createCategory(name: string, description?: string) {
   if (error) {
     return { error: error.message };
   }
-  redirect("/app/kb");
+  
+  revalidatePath("/app/kb");
+  return {};
 }
 
 export async function updateCategory(id: string, name: string, description?: string): Promise<KbActionResult> {
