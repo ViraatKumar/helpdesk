@@ -1,15 +1,17 @@
 import { z } from "zod";
 import type { InboundEmailHeaders } from "@/lib/email/threading";
 
-// Resend's inbound webhook payload shape, as documented at the time of writing. Kept intentionally
-// loose (raw headers array preferred, top-level fields as fallback) because this was built without a
-// live Resend account to fire a real webhook against and confirm the exact shape — see README
-// trade-off ledger. Re-verify against an actual payload during deployment; this is the one place in
-// the email pipeline most likely to need a field-name tweak.
+// Resend's inbound webhook payload shape. The `type` check matters: a Resend webhook endpoint can be
+// subscribed to any of ~17 event types (email.sent, email.delivered, email.bounced, ...), and several
+// of those outbound-delivery events carry a `data.from` field too. Without pinning `type` to exactly
+// "email.received", a delivery receipt for an email *we* sent could be misread as a customer message
+// arriving. Field names below are kept intentionally loose (raw headers array preferred, top-level
+// fields as fallback) since this was built without a live Resend account to fire a real webhook
+// against and confirm every field — see README trade-off ledger.
 const headerEntrySchema = z.object({ name: z.string(), value: z.string() });
 
 const resendInboundSchema = z.object({
-  type: z.string().optional(),
+  type: z.literal("email.received"),
   data: z.object({
     from: z.string(),
     to: z.union([z.string(), z.array(z.string())]).optional(),
