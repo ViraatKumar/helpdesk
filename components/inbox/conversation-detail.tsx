@@ -10,6 +10,7 @@ import { ReplyComposer } from "@/components/inbox/reply-composer";
 import { SummarizePanel } from "@/components/inbox/summarize-panel";
 import { ConversationDetailSkeleton } from "@/components/inbox/conversation-detail-skeleton";
 import { AiDraftButton } from "@/components/inbox/ai-draft-button";
+import { CannedPicker } from "@/components/inbox/canned-picker";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { ConversationWithContact, Message, ConversationStatus } from "@/lib/types";
 import {
@@ -26,10 +27,14 @@ export function ConversationDetail({
   conversationId,
   currentUserId,
   members,
+  workspaceId,
+  workspaceName,
 }: {
   conversationId: string;
   currentUserId: string;
   members: { user_id: string; email: string }[];
+  workspaceId: string;
+  workspaceName: string;
 }) {
   const [conversation, setConversation] = useState<ConversationWithContact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -37,7 +42,7 @@ export function ConversationDetail({
   const [sendError, setSendError] = useState<string | null>(null);
   const [contactTyping, setContactTyping] = useState(false);
   const [contactOnline, setContactOnline] = useState(false);
-  const [draft, setDraft] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ text: string; nonce: number } | null>(null);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -257,13 +262,29 @@ export function ConversationDetail({
 
       {sendError && <p className="px-3 text-sm text-destructive">{sendError}</p>}
       <div className="flex items-center justify-between px-3 pt-3">
-        <AiDraftButton
-          conversationId={conversationId}
-          onDraft={(text) => {
-            setDraft(text);
-            setShowDraftBanner(true);
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <AiDraftButton
+            conversationId={conversationId}
+            onDraft={(text) => {
+              setDraft({ text, nonce: Date.now() });
+              setShowDraftBanner(true);
+            }}
+          />
+          <CannedPicker
+            workspaceId={workspaceId}
+            variables={{
+              contact_name: conversation.contact?.name ?? undefined,
+              agent_name: members
+                .find((m) => m.user_id === currentUserId)
+                ?.email.split("@")[0],
+              workspace_name: workspaceName,
+            }}
+            onInsert={(text) => {
+              setDraft({ text, nonce: Date.now() });
+              setShowDraftBanner(false);
+            }}
+          />
+        </div>
         {showDraftBanner && (
           <span className="text-xs text-muted-foreground">AI draft — review before sending</span>
         )}

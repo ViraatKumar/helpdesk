@@ -21,12 +21,14 @@ const ConversationDetail = dynamic(
 
 export function InboxShell({
   workspaceId,
+  workspaceName,
   currentUserId,
   conversations,
   members,
   filters,
 }: {
   workspaceId: string;
+  workspaceName: string;
   currentUserId: string;
   conversations: ConversationWithContact[];
   members: { user_id: string; email: string }[];
@@ -102,6 +104,8 @@ export function InboxShell({
               conversationId={selectedId}
               currentUserId={currentUserId}
               members={members}
+              workspaceId={workspaceId}
+              workspaceName={workspaceName}
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/20 p-6 text-center">

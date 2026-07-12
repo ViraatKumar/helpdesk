@@ -96,6 +96,17 @@ export interface ConversationSummary {
   created_at: string;
 }
 
+export interface CannedResponse {
+  id: string;
+  workspace_id: string;
+  shortcut: string;
+  title: string;
+  body: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ConversationWithContact extends Conversation {
   contact: Contact;
 }

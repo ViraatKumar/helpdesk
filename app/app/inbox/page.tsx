@@ -42,6 +42,7 @@ export default async function InboxPage({
   return (
     <InboxShell
       workspaceId={context.workspace.id}
+      workspaceName={context.workspace.name}
       currentUserId={context.userId}
       conversations={(conversations ?? []) as ConversationWithContact[]}
       members={(members ?? []) as { user_id: string; email: string }[]}

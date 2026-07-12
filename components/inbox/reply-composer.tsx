@@ -22,8 +22,11 @@ export function ReplyComposer({
   onTyping?: () => void;
   sending: boolean;
   placeholder?: string;
-  /** AI-generated draft text to inject into the editor — see components/inbox/ai-draft-button.tsx. */
-  draftContent?: string | null;
+  /**
+   * Draft text to inject into the editor (AI draft or canned response). The nonce distinguishes
+   * repeated inserts of identical text — each click gets a fresh nonce, so re-inserting works.
+   */
+  draftContent?: { text: string; nonce: number } | null;
 }) {
   const editor = useEditor({
     extensions: [StarterKit],
@@ -48,12 +51,12 @@ export function ReplyComposer({
   // JSX goes stale (the Send button would stay disabled after typing). useEditorState subscribes.
   const isEmpty = useEditorState({ editor, selector: (ctx) => ctx.editor?.isEmpty ?? true }) ?? true;
 
-  const consumedDraftRef = useRef<string | null>(null);
+  const consumedNonceRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!editor || !draftContent || draftContent === consumedDraftRef.current) return;
-    consumedDraftRef.current = draftContent;
+    if (!editor || !draftContent || draftContent.nonce === consumedNonceRef.current) return;
+    consumedNonceRef.current = draftContent.nonce;
     editor.commands.setContent(
-      draftContent
+      draftContent.text
         .split(/\n{2,}/)
         .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
         .join(""),

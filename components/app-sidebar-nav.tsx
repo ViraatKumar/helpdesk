@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Inbox, Users, Settings, LayoutGrid } from "lucide-react";
+import { BookOpen, Inbox, Users, Settings, LayoutGrid, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/app/inbox", label: "Inbox", icon: Inbox },
   { href: "/app/kb", label: "Knowledge Base", icon: BookOpen },
   { href: "/app/settings/team", label: "Team", icon: Users },
+  { href: "/app/settings/canned", label: "Canned Responses", icon: Zap },
   { href: "/app/settings/workspace", label: "Workspace Settings", icon: Settings },
   { href: "/workspaces", label: "Workspaces", icon: LayoutGrid },
 ];
