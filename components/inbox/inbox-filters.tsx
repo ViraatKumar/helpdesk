@@ -34,7 +34,7 @@ export function InboxFilters({
   return (
     <div className="flex items-center gap-2 border-b p-3">
       <Select value={filters.status} onValueChange={(v) => v && setFilter("status", v)}>
-        <SelectTrigger className="w-32">
+        <SelectTrigger className="w-32" aria-label="Filter by status">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -46,7 +46,7 @@ export function InboxFilters({
       </Select>
 
       <Select value={filters.channel} onValueChange={(v) => v && setFilter("channel", v)}>
-        <SelectTrigger className="w-32">
+        <SelectTrigger className="w-32" aria-label="Filter by channel">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -57,7 +57,7 @@ export function InboxFilters({
       </Select>
 
       <Select value={filters.assignee} onValueChange={(v) => v && setFilter("assignee", v)}>
-        <SelectTrigger className="w-40">
+        <SelectTrigger className="w-40" aria-label="Filter by assignee">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

@@ -66,7 +66,7 @@ export default async function PublicKbPage({
           <Link
             key={article.id}
             href={`/kb/${workspaceSlug}/${article.id}`}
-            className="block rounded-md border p-4 hover:bg-muted"
+            className="block rounded-md border p-4 outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <p className="font-medium">{article.title}</p>
           </Link>

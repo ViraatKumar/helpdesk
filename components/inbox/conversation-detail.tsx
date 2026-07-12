@@ -140,7 +140,7 @@ export function ConversationDetail({
               assignConversation(conversationId, assigneeId);
             }}
           >
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-40" aria-label="Assignee">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -162,7 +162,7 @@ export function ConversationDetail({
               updateConversationStatus(conversationId, status);
             }}
           >
-            <SelectTrigger className="w-28">
+            <SelectTrigger className="w-28" aria-label="Conversation status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -176,7 +176,12 @@ export function ConversationDetail({
 
       <SummarizePanel conversationId={conversationId} />
 
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+      <div
+        ref={scrollRef}
+        role="log"
+        aria-label={`Conversation with ${contactLabel}`}
+        className="flex-1 space-y-3 overflow-y-auto p-4"
+      >
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.sender_type === "agent" ? "justify-end" : "justify-start"}`}>
             <div

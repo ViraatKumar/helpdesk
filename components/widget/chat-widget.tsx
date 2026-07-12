@@ -153,7 +153,7 @@ export function ChatWidget({
         <button
           onClick={closeWidget}
           aria-label="Close chat"
-          className="rounded-full px-2 py-1 text-lg leading-none opacity-80 hover:opacity-100"
+          className="-my-2 -mr-2 flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-lg leading-none opacity-80 outline-none transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-foreground/60 active:opacity-100"
         >
           &times;
         </button>
@@ -215,9 +215,11 @@ export function ChatWidget({
           value={input}
           onChange={(e) => handleInputChange(e.target.value)}
           placeholder="Type a message…"
+          aria-label="Message"
           disabled={!conversationId}
+          className="h-11"
         />
-        <Button type="submit" disabled={!input.trim() || !conversationId}>
+        <Button type="submit" disabled={!input.trim() || !conversationId} className="h-11 px-4">
           Send
         </Button>
       </form>

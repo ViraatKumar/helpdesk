@@ -41,7 +41,7 @@ export default async function KbAdminPage() {
           <Link
             key={article.id}
             href={`/app/kb/${article.id}`}
-            className="flex items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-muted"
+            className="flex min-h-11 items-center justify-between rounded-md border px-3 py-2 text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <span className="truncate font-medium">{article.title || "Untitled"}</span>
             <div className="flex shrink-0 items-center gap-2">

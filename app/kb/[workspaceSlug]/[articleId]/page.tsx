@@ -32,7 +32,10 @@ export default async function PublicKbArticlePage({
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
-      <Link href={`/kb/${workspaceSlug}`} className="text-sm text-muted-foreground hover:underline">
+      <Link
+        href={`/kb/${workspaceSlug}`}
+        className="inline-flex min-h-11 items-center rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
         &larr; {workspace.name} Help Center
       </Link>
       <h1 className="mt-4 text-3xl font-bold">{article.title}</h1>

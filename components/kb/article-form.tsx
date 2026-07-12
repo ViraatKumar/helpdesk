@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { createArticle, updateArticle, deleteArticle } from "@/lib/actions/kb";
@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import type { KbArticle } from "@/lib/types";
 
 export function ArticleForm({ article }: { article?: KbArticle }) {
-  const router = useRouter();
   const [title, setTitle] = useState(article?.title ?? "");
   const [published, setPublished] = useState(article?.published ?? false);
   const [saving, setSaving] = useState(false);
@@ -50,9 +49,12 @@ export function ArticleForm({ article }: { article?: KbArticle }) {
 
   return (
     <div className="mx-auto max-w-2xl p-8">
-      <button onClick={() => router.push("/app/kb")} className="mb-4 text-sm text-muted-foreground hover:underline">
+      <Link
+        href="/app/kb"
+        className="mb-4 inline-flex min-h-11 items-center rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
         &larr; Back to Knowledge Base
-      </button>
+      </Link>
 
       <Input
         value={title}

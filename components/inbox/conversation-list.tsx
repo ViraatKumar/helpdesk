@@ -2,6 +2,7 @@
 
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { ConversationWithContact } from "@/lib/types";
 
 export function ConversationList({
@@ -26,9 +27,11 @@ export function ConversationList({
           <li key={conversation.id}>
             <button
               onClick={() => onSelect(conversation.id)}
-              className={`block w-full border-b p-3 text-left text-sm hover:bg-muted ${
-                selectedId === conversation.id ? "bg-muted" : ""
-              }`}
+              aria-current={selectedId === conversation.id ? "true" : undefined}
+              className={cn(
+                "block min-h-11 w-full cursor-pointer border-b p-3 text-left text-sm outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted",
+                selectedId === conversation.id && "bg-muted",
+              )}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate font-medium">{label}</span>

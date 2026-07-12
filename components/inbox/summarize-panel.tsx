@@ -11,10 +11,13 @@ interface Summary {
   suggested_action: string;
 }
 
+// Neutral/negative map to theme tokens; positive keeps an emerald accent with an explicit dark
+// variant since the palette has no "success" token.
 const SENTIMENT_CLASSES: Record<Summary["sentiment"], string> = {
-  positive: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
-  neutral: "bg-slate-100 text-slate-800 hover:bg-slate-100",
-  negative: "bg-red-100 text-red-800 hover:bg-red-100",
+  positive:
+    "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-400",
+  neutral: "bg-muted text-muted-foreground hover:bg-muted",
+  negative: "bg-destructive/10 text-destructive hover:bg-destructive/10 dark:bg-destructive/20",
 };
 
 export function SummarizePanel({ conversationId }: { conversationId: string }) {
@@ -48,7 +51,7 @@ export function SummarizePanel({ conversationId }: { conversationId: string }) {
   }
 
   return (
-    <div className="space-y-2 border-b bg-muted/30 p-3 text-sm">
+    <div role="status" className="space-y-2 border-b bg-muted/30 p-3 text-sm">
       <div className="flex items-center justify-between">
         <Badge className={SENTIMENT_CLASSES[summary.sentiment]}>{summary.sentiment}</Badge>
         <Button variant="ghost" size="sm" onClick={handleSummarize} disabled={loading}>
