@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { MessagesSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { workspaceChannelName } from "@/lib/realtime/channels";
 import { ConversationList } from "@/components/inbox/conversation-list";
@@ -78,8 +79,11 @@ export function InboxShell({
   const detailPending = isSelecting && pendingId !== null && pendingId !== selectedId;
 
   return (
-    <div className="flex h-screen flex-col">
-      <InboxFilters filters={filters} members={members} />
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between gap-3 border-b px-4 py-2.5">
+        <h1 className="text-sm font-semibold">Inbox</h1>
+        <InboxFilters filters={filters} members={members} />
+      </div>
       <div className="flex flex-1 overflow-hidden">
         <div className="w-80 shrink-0 overflow-y-auto border-r">
           <ConversationList
@@ -99,8 +103,16 @@ export function InboxShell({
               members={members}
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-              Select a conversation
+            <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/20 p-6 text-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                <MessagesSquare className="size-5 text-muted-foreground" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Select a conversation</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Pick a conversation from the list to read and reply.
+                </p>
+              </div>
             </div>
           )}
         </div>

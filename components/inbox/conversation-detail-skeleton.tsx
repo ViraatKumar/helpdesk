@@ -5,10 +5,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function ConversationDetailSkeleton() {
   return (
     <div className="flex h-full flex-col" aria-hidden="true">
-      <header className="flex items-center justify-between border-b p-3">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-36" />
-          <Skeleton className="h-3 w-48" />
+      <header className="flex items-center justify-between gap-3 border-b p-3">
+        <div className="flex items-center gap-2.5">
+          <Skeleton className="size-9 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-3 w-48" />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Skeleton className="h-8 w-40" />
@@ -18,7 +21,7 @@ export function ConversationDetailSkeleton() {
       <div className="border-b p-3">
         <Skeleton className="h-7 w-24" />
       </div>
-      <div className="flex-1 space-y-3 overflow-hidden p-4">
+      <div className="flex-1 space-y-3 overflow-hidden bg-muted/20 p-4">
         <div className="flex justify-start">
           <Skeleton className="h-9 w-3/5 rounded-2xl" />
         </div>

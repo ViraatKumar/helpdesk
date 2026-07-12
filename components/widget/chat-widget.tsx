@@ -200,10 +200,10 @@ export function ChatWidget({
             className={`flex ${message.sender_type === "contact" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+              className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap ${
                 message.sender_type === "contact"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground"
+                  ? "rounded-br-md bg-primary text-primary-foreground"
+                  : "rounded-bl-md bg-muted text-foreground"
               }`}
             >
               {message.body}

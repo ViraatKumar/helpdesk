@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { conversationChannelName } from "@/lib/realtime/channels";
 import { sendAgentReply, notifyAgentTyping, markConversationRead } from "@/lib/actions/messages";
 import { assignConversation, updateConversationStatus } from "@/lib/actions/conversations";
+import { initialsFor } from "@/lib/utils";
 import { ReplyComposer } from "@/components/inbox/reply-composer";
 import { SummarizePanel } from "@/components/inbox/summarize-panel";
 import { ConversationDetailSkeleton } from "@/components/inbox/conversation-detail-skeleton";
@@ -123,12 +124,20 @@ export function ConversationDetail({
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b p-3">
-        <div>
-          <p className="text-sm font-medium">{contactLabel}</p>
-          <p className="text-xs text-muted-foreground">
-            {conversation.subject || `${conversation.channel} conversation`}
-          </p>
+      <header className="flex items-center justify-between gap-3 border-b p-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            aria-hidden="true"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
+          >
+            {initialsFor(contactLabel)}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">{contactLabel}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {conversation.subject || `${conversation.channel} conversation`}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Select
@@ -180,20 +189,35 @@ export function ConversationDetail({
         ref={scrollRef}
         role="log"
         aria-label={`Conversation with ${contactLabel}`}
-        className="flex-1 space-y-3 overflow-y-auto p-4"
+        className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-4"
       >
         {messages.map((message) => (
-          <div key={message.id} className={`flex ${message.sender_type === "agent" ? "justify-end" : "justify-start"}`}>
+          <div
+            key={message.id}
+            className={`flex ${message.sender_type === "agent" ? "justify-end" : "justify-start"}`}
+          >
             <div
-              className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                message.sender_type === "agent" ? "bg-primary text-primary-foreground" : "bg-muted"
+              title={new Date(message.created_at).toLocaleString()}
+              className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap ${
+                message.sender_type === "agent"
+                  ? "rounded-br-md bg-primary text-primary-foreground"
+                  : "rounded-bl-md border bg-card"
               }`}
             >
               {message.body}
             </div>
           </div>
         ))}
-        {contactTyping && <p className="text-xs text-muted-foreground">{contactLabel} is typing…</p>}
+        {contactTyping && (
+          <div className="flex justify-start">
+            <div className="flex items-center gap-1 rounded-2xl rounded-bl-md border bg-card px-3.5 py-3">
+              <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/70 [animation-delay:0ms]" />
+              <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/70 [animation-delay:150ms]" />
+              <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/70 [animation-delay:300ms]" />
+              <span className="sr-only">{contactLabel} is typing</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {sendError && <p className="px-3 text-sm text-destructive">{sendError}</p>}

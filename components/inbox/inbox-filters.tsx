@@ -39,7 +39,7 @@ export function InboxFilters({
   }
 
   return (
-    <div className="flex items-center gap-2 border-b p-3" aria-busy={isPending}>
+    <div className="flex items-center gap-2" aria-busy={isPending}>
       <Select value={filters.status} onValueChange={(v) => v && setFilter("status", v)}>
         <SelectTrigger className="w-32" aria-label="Filter by status">
           <SelectValue />
