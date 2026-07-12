@@ -7,6 +7,7 @@ import { sendAgentReply, notifyAgentTyping, markConversationRead } from "@/lib/a
 import { assignConversation, updateConversationStatus } from "@/lib/actions/conversations";
 import { ReplyComposer } from "@/components/inbox/reply-composer";
 import { SummarizePanel } from "@/components/inbox/summarize-panel";
+import { ConversationDetailSkeleton } from "@/components/inbox/conversation-detail-skeleton";
 import { AiDraftButton } from "@/components/inbox/ai-draft-button";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { ConversationWithContact, Message, ConversationStatus } from "@/lib/types";
@@ -115,7 +116,7 @@ export function ConversationDetail({
   }
 
   if (!conversation) {
-    return <div className="p-4 text-sm text-muted-foreground">Loading…</div>;
+    return <ConversationDetailSkeleton />;
   }
 
   const contactLabel = conversation.contact?.name || conversation.contact?.email || "Anonymous visitor";
