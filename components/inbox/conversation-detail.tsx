@@ -11,8 +11,9 @@ import { SummarizePanel } from "@/components/inbox/summarize-panel";
 import { ConversationDetailSkeleton } from "@/components/inbox/conversation-detail-skeleton";
 import { AiDraftButton } from "@/components/inbox/ai-draft-button";
 import { CannedPicker } from "@/components/inbox/canned-picker";
+import { SlaBadge } from "@/components/inbox/sla-badge";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import type { ConversationWithContact, Message, ConversationStatus } from "@/lib/types";
+import type { ConversationWithContact, Message, ConversationStatus, SlaPolicy } from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -29,12 +30,14 @@ export function ConversationDetail({
   members,
   workspaceId,
   workspaceName,
+  slaPolicy,
 }: {
   conversationId: string;
   currentUserId: string;
   members: { user_id: string; email: string }[];
   workspaceId: string;
   workspaceName: string;
+  slaPolicy: SlaPolicy | null;
 }) {
   const [conversation, setConversation] = useState<ConversationWithContact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -165,7 +168,10 @@ export function ConversationDetail({
             )}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{contactLabel}</p>
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-medium">{contactLabel}</p>
+              <SlaBadge conversation={conversation} policy={slaPolicy} />
+            </div>
             <p className="truncate text-xs text-muted-foreground">
               {conversation.subject || `${conversation.channel} conversation`}
             </p>

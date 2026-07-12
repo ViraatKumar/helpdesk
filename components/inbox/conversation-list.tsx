@@ -3,16 +3,19 @@
 import { formatDistanceToNow } from "date-fns";
 import { Inbox, Mail, MessageSquare } from "lucide-react";
 import { cn, initialsFor } from "@/lib/utils";
-import type { ConversationWithContact } from "@/lib/types";
+import { SlaBadge } from "@/components/inbox/sla-badge";
+import type { ConversationWithContact, SlaPolicy } from "@/lib/types";
 
 export function ConversationList({
   conversations,
   selectedId,
   onSelect,
+  slaPolicy,
 }: {
   conversations: ConversationWithContact[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  slaPolicy: SlaPolicy | null;
 }) {
   if (conversations.length === 0) {
     return (
@@ -59,12 +62,15 @@ export function ConversationList({
                       })}
                     </span>
                   </div>
-                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <ChannelIcon className="size-3 shrink-0" aria-hidden="true" />
-                    <span className="sr-only">{conversation.channel}:</span>
-                    <span className="truncate">
-                      {conversation.subject || "Chat conversation"}
+                  <div className="mt-0.5 flex items-center justify-between gap-1.5 text-xs text-muted-foreground">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <ChannelIcon className="size-3 shrink-0" aria-hidden="true" />
+                      <span className="sr-only">{conversation.channel}:</span>
+                      <span className="truncate">
+                        {conversation.subject || "Chat conversation"}
+                      </span>
                     </span>
+                    <SlaBadge conversation={conversation} policy={slaPolicy} />
                   </div>
                 </div>
               </div>

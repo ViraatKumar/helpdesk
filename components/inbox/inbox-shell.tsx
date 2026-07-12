@@ -9,7 +9,7 @@ import { workspaceChannelName } from "@/lib/realtime/channels";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { ConversationDetailSkeleton } from "@/components/inbox/conversation-detail-skeleton";
 import { InboxFilters } from "@/components/inbox/inbox-filters";
-import type { ConversationWithContact } from "@/lib/types";
+import type { ConversationWithContact, SlaPolicy } from "@/lib/types";
 
 // The detail pane pulls in tiptap (the single heaviest client dependency) plus the AI panels, none
 // of which are needed to render the list. Splitting it keeps the inbox's initial chunk small; the
@@ -26,6 +26,7 @@ export function InboxShell({
   conversations,
   members,
   filters,
+  slaPolicy,
 }: {
   workspaceId: string;
   workspaceName: string;
@@ -33,6 +34,7 @@ export function InboxShell({
   conversations: ConversationWithContact[];
   members: { user_id: string; email: string }[];
   filters: { status: string; channel: string; assignee: string };
+  slaPolicy: SlaPolicy | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -93,6 +95,7 @@ export function InboxShell({
             conversations={conversations}
             selectedId={highlightedId}
             onSelect={selectConversation}
+            slaPolicy={slaPolicy}
           />
         </div>
         <div className="flex-1 overflow-hidden">
@@ -106,6 +109,7 @@ export function InboxShell({
               members={members}
               workspaceId={workspaceId}
               workspaceName={workspaceName}
+              slaPolicy={slaPolicy}
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/20 p-6 text-center">

@@ -92,6 +92,14 @@ export async function sendAgentReply(
     return { error: error.message };
   }
 
+  // SLA: stamp the first-response time exactly once (the `.is null` filter makes this a no-op on
+  // every reply after the first) — lib/sla.ts measures against it.
+  await supabase
+    .from("conversations")
+    .update({ first_agent_reply_at: new Date().toISOString() })
+    .eq("id", conversationId)
+    .is("first_agent_reply_at", null);
+
   await broadcast(conversationChannelName(conversationId), "new_message", { message });
   await broadcast(workspaceChannelName(context.workspace.id), "conversation_updated", {
     conversation_id: conversationId,

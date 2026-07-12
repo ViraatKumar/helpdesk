@@ -48,7 +48,16 @@ export interface Conversation {
   assignee_id: string | null;
   subject: string | null;
   last_message_at: string;
+  first_agent_reply_at: string | null;
+  closed_at: string | null;
   created_at: string;
+}
+
+export interface SlaPolicy {
+  workspace_id: string;
+  first_response_minutes: number | null;
+  resolution_minutes: number | null;
+  updated_at: string;
 }
 
 export interface Message {

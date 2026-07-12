@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireWorkspaceContext } from "@/lib/auth/session";
 import { InboxShell } from "@/components/inbox/inbox-shell";
-import type { ConversationWithContact } from "@/lib/types";
+import type { ConversationWithContact, SlaPolicy } from "@/lib/types";
 
 export default async function InboxPage({
   searchParams,
@@ -35,9 +35,10 @@ export default async function InboxPage({
 
   const { data: conversations } = await query;
 
-  const { data: members } = await supabase.rpc("list_workspace_members", {
-    target_workspace_id: context.workspace.id,
-  });
+  const [{ data: members }, { data: slaPolicy }] = await Promise.all([
+    supabase.rpc("list_workspace_members", { target_workspace_id: context.workspace.id }),
+    supabase.from("sla_policies").select("*").eq("workspace_id", context.workspace.id).maybeSingle(),
+  ]);
 
   return (
     <InboxShell
@@ -46,6 +47,7 @@ export default async function InboxPage({
       currentUserId={context.userId}
       conversations={(conversations ?? []) as ConversationWithContact[]}
       members={(members ?? []) as { user_id: string; email: string }[]}
+      slaPolicy={(slaPolicy as SlaPolicy | null) ?? null}
       filters={{
         status,
         channel: params.channel ?? "all",

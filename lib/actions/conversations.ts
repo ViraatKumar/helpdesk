@@ -43,9 +43,11 @@ export async function updateConversationStatus(
   const context = await requireWorkspaceContext();
   const supabase = await createClient();
 
+  // SLA: closed_at tracks the current closed state — set on close, cleared on reopen/snooze so a
+  // reopened conversation's resolution clock keeps running from created_at.
   const { error } = await supabase
     .from("conversations")
-    .update({ status })
+    .update({ status, closed_at: status === "closed" ? new Date().toISOString() : null })
     .eq("id", conversationId)
     .eq("workspace_id", context.workspace.id);
 

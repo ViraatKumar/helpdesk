@@ -3,19 +3,25 @@ import { requireWorkspaceContext } from "@/lib/auth/session";
 import { InviteRow } from "@/components/team/invite-row";
 import { RequestRow } from "@/components/team/request-row";
 import { InviteMemberForm } from "@/components/team/invite-member-form";
-import type { WorkspaceInvite } from "@/lib/types";
+import { SlaPolicyForm } from "@/components/settings/sla-policy-form";
+import type { SlaPolicy, WorkspaceInvite } from "@/lib/types";
 
 export default async function WorkspaceSettingsPage() {
   const context = await requireWorkspaceContext();
   const supabase = await createClient();
 
-  const [{ data: invites }, { data: requests }] = await Promise.all([
+  const [{ data: invites }, { data: requests }, { data: slaPolicy }] = await Promise.all([
     supabase
       .from("workspace_invites")
       .select("*")
       .eq("workspace_id", context.workspace.id)
       .order("created_at", { ascending: false }),
     supabase.rpc("list_workspace_requests", { target_workspace_id: context.workspace.id }),
+    supabase
+      .from("sla_policies")
+      .select("*")
+      .eq("workspace_id", context.workspace.id)
+      .maybeSingle(),
   ]);
 
   const canManage = context.role === "owner" || context.role === "admin";
@@ -46,6 +52,17 @@ export default async function WorkspaceSettingsPage() {
               <RequestRow key={request.id} request={request} />
             ))}
           </div>
+        </div>
+      )}
+
+      {canManage && (
+        <div className="mt-8 border-t pt-6">
+          <h2 className="text-sm font-medium">SLA targets</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Time limits for the first agent reply and for resolving a conversation, measured from
+            when the conversation starts.
+          </p>
+          <SlaPolicyForm policy={(slaPolicy as SlaPolicy | null) ?? null} />
         </div>
       )}
 
