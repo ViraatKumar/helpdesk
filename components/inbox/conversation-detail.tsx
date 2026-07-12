@@ -12,6 +12,7 @@ import { ConversationDetailSkeleton } from "@/components/inbox/conversation-deta
 import { AiDraftButton } from "@/components/inbox/ai-draft-button";
 import { CannedPicker } from "@/components/inbox/canned-picker";
 import { SlaBadge } from "@/components/inbox/sla-badge";
+import { ContactTimelinePanel } from "@/components/inbox/contact-timeline";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { ConversationWithContact, Message, ConversationStatus, SlaPolicy } from "@/lib/types";
 import {
@@ -31,6 +32,7 @@ export function ConversationDetail({
   workspaceId,
   workspaceName,
   slaPolicy,
+  onSelectConversation,
 }: {
   conversationId: string;
   currentUserId: string;
@@ -38,6 +40,7 @@ export function ConversationDetail({
   workspaceId: string;
   workspaceName: string;
   slaPolicy: SlaPolicy | null;
+  onSelectConversation?: (id: string) => void;
 }) {
   const [conversation, setConversation] = useState<ConversationWithContact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -151,7 +154,8 @@ export function ConversationDetail({
   const contactLabel = conversation.contact?.name || conversation.contact?.email || "Anonymous visitor";
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full">
+      <div className="flex h-full min-w-0 flex-1 flex-col">
       <header className="flex items-center justify-between gap-3 border-b p-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
@@ -302,6 +306,18 @@ export function ConversationDetail({
         placeholder={conversation.channel === "email" ? "Write an email reply…" : "Write a reply…"}
         draftContent={draft}
       />
+      </div>
+
+      <aside
+        aria-label="Contact timeline"
+        className="hidden w-72 shrink-0 overflow-y-auto border-l xl:block"
+      >
+        <ContactTimelinePanel
+          contact={conversation.contact}
+          currentConversationId={conversationId}
+          onSelectConversation={onSelectConversation}
+        />
+      </aside>
     </div>
   );
 }
