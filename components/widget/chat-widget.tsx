@@ -41,6 +41,7 @@ export function ChatWidget({
   const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [savingEmail, setSavingEmail] = useState(false);
+  const [suggestedArticles, setSuggestedArticles] = useState<{id: string, title: string}[]>([]);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -142,6 +143,23 @@ export function ChatWidget({
     lastTypingSentAtRef.current = now;
     channelRef.current.send({ type: "broadcast", event: "typing", payload: { from: "contact" } });
   }, []);
+
+  useEffect(() => {
+    if (input.trim().length < 5) {
+      setSuggestedArticles([]);
+      return;
+    }
+    const timeoutId = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/widget/search?q=${encodeURIComponent(input)}&workspaceSlug=${workspaceSlug}`);
+        const data = await res.json();
+        if (data.articles) setSuggestedArticles(data.articles);
+      } catch (err) {
+        // ignore
+      }
+    }, 800);
+    return () => clearTimeout(timeoutId);
+  }, [input, workspaceSlug]);
 
   function handleInputChange(value: string) {
     setInput(value);
@@ -312,6 +330,29 @@ export function ChatWidget({
         <p role="alert" className="px-3 pb-1 text-xs text-destructive">
           {sendError}
         </p>
+      )}
+
+      {suggestedArticles.length > 0 && (
+        <div className="absolute bottom-[4.5rem] left-4 right-4 z-10 animate-in fade-in slide-in-from-bottom-2 rounded-xl border bg-card p-3 shadow-lg">
+          <p className="mb-2 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Suggested Articles
+          </p>
+          <div className="flex flex-col gap-2">
+            {suggestedArticles.map((article) => (
+              <a
+                key={article.id}
+                href={`/kb/${workspaceSlug}/${article.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="truncate rounded-md px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                onClick={() => setSuggestedArticles([])}
+              >
+                {article.title}
+              </a>
+            ))}
+          </div>
+        </div>
       )}
 
       <form

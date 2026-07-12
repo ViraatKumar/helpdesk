@@ -64,9 +64,20 @@ export interface Message {
   created_at: string;
 }
 
+export interface KbCategory {
+  id: string;
+  workspace_id: string;
+  name: string;
+  description: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface KbArticle {
   id: string;
   workspace_id: string;
+  category_id: string | null;
   title: string;
   body_html: string;
   published: boolean;

@@ -19,5 +19,12 @@ export default async function EditArticlePage({ params }: { params: Promise<{ id
     notFound();
   }
 
-  return <ArticleForm article={article} />;
+  const { data: categories } = await supabase
+    .from("kb_categories")
+    .select("*")
+    .eq("workspace_id", context.workspace.id)
+    .order("position", { ascending: true })
+    .order("name", { ascending: true });
+
+  return <ArticleForm article={article} categories={categories ?? []} />;
 }

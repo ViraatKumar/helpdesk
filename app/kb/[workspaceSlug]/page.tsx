@@ -43,12 +43,20 @@ export default async function PublicKbPage({
   } else {
     const { data } = await supabase
       .from("kb_articles")
-      .select("id, title, body_html")
+      .select("id, title, body_html, category_id")
       .eq("workspace_id", workspace.id)
       .eq("published", true)
       .order("updated_at", { ascending: false });
     articles = (data ?? []).map((a) => ({ ...a, rank: 0 }));
   }
+
+  const { data: categoriesData } = await supabase
+    .from("kb_categories")
+    .select("*")
+    .eq("workspace_id", workspace.id)
+    .order("position", { ascending: true })
+    .order("name", { ascending: true });
+  const categories = categoriesData ?? [];
 
   return (
     <div className="min-h-screen animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none">
@@ -73,18 +81,58 @@ export default async function PublicKbPage({
         {articles.length === 0 && !q?.trim() && (
           <p className="text-center text-sm text-muted-foreground">No published articles yet.</p>
         )}
-        <div className="space-y-3">
-          {articles.map((article) => (
-            <Link
-              key={article.id}
-              href={`/kb/${workspaceSlug}/${article.id}`}
-              className="flex min-h-11 items-center gap-3 rounded-lg border bg-card p-4 outline-none transition-all hover:border-primary/30 hover:shadow-sm focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <FileText className="size-4 shrink-0 text-primary" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate font-medium">{article.title}</span>
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            </Link>
-          ))}
+        <div className="space-y-10">
+          {!q?.trim() && categories.map((cat) => {
+            // @ts-ignore
+            const catArticles = articles.filter(a => a.category_id === cat.id);
+            if (catArticles.length === 0) return null;
+            return (
+              <div key={cat.id} className="space-y-3">
+                <h2 className="text-xl font-medium tracking-tight">{cat.name}</h2>
+                {cat.description && <p className="text-sm text-muted-foreground">{cat.description}</p>}
+                <div className="grid gap-3">
+                  {catArticles.map((article) => (
+                    <Link
+                      key={article.id}
+                      href={`/kb/${workspaceSlug}/${article.id}`}
+                      className="flex min-h-11 items-center gap-3 rounded-lg border bg-card p-4 outline-none transition-all hover:border-primary/30 hover:shadow-sm focus-visible:ring-3 focus-visible:ring-ring/50"
+                    >
+                      <FileText className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                      <span className="min-w-0 flex-1 truncate font-medium">{article.title}</span>
+                      <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {(!q?.trim() ? (
+            // @ts-ignore
+            articles.filter(a => !a.category_id)
+          ) : articles).length > 0 && (
+            <div className="space-y-3">
+              {!q?.trim() && categories.length > 0 && (
+                <h2 className="text-xl font-medium tracking-tight">Other Articles</h2>
+              )}
+              <div className="grid gap-3">
+                {(!q?.trim() ? (
+                  // @ts-ignore
+                  articles.filter(a => !a.category_id)
+                ) : articles).map((article) => (
+                  <Link
+                    key={article.id}
+                    href={`/kb/${workspaceSlug}/${article.id}`}
+                    className="flex min-h-11 items-center gap-3 rounded-lg border bg-card p-4 outline-none transition-all hover:border-primary/30 hover:shadow-sm focus-visible:ring-3 focus-visible:ring-ring/50"
+                  >
+                    <FileText className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate font-medium">{article.title}</span>
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <p className="mt-14 text-center text-xs text-muted-foreground">
           Powered by{" "}

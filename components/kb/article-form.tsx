@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import type { KbArticle } from "@/lib/types";
+import type { KbArticle, KbCategory } from "@/lib/types";
 
-export function ArticleForm({ article }: { article?: KbArticle }) {
+export function ArticleForm({ article, categories = [] }: { article?: KbArticle; categories?: KbCategory[] }) {
   const [title, setTitle] = useState(article?.title ?? "");
+  const [categoryId, setCategoryId] = useState(article?.category_id ?? "");
   const [published, setPublished] = useState(article?.published ?? false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -34,10 +35,10 @@ export function ArticleForm({ article }: { article?: KbArticle }) {
     const bodyHtml = editor.getHTML();
 
     if (article) {
-      const result = await updateArticle(article.id, title, bodyHtml, published);
+      const result = await updateArticle(article.id, title, bodyHtml, published, categoryId || null);
       if (result.error) setError(result.error);
     } else {
-      await createArticle(title, bodyHtml, published);
+      await createArticle(title, bodyHtml, published, categoryId || null);
     }
     setSaving(false);
   }
@@ -62,12 +63,26 @@ export function ArticleForm({ article }: { article?: KbArticle }) {
         &larr; Back to Knowledge Base
       </Link>
 
-      <Input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Article title"
-        className="mb-4 text-lg font-medium"
-      />
+      <div className="mb-4 flex gap-4">
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Article title"
+          className="flex-1 text-lg font-medium"
+        />
+        <select
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          className="flex h-10 w-[200px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value="">No Category</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="rounded-md border">
         <EditorContent editor={editor} />
