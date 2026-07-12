@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, escapeHtml } from "@/lib/utils";
 
@@ -43,6 +44,10 @@ export function ReplyComposer({
     onUpdate: () => onTyping?.(),
   });
 
+  // tiptap v3 doesn't re-render on transactions by default, so reading editor.isEmpty directly in
+  // JSX goes stale (the Send button would stay disabled after typing). useEditorState subscribes.
+  const isEmpty = useEditorState({ editor, selector: (ctx) => ctx.editor?.isEmpty ?? true }) ?? true;
+
   const consumedDraftRef = useRef<string | null>(null);
   useEffect(() => {
     if (!editor || !draftContent || draftContent === consumedDraftRef.current) return;
@@ -53,6 +58,7 @@ export function ReplyComposer({
         .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
         .join(""),
     );
+    editor.commands.focus("end");
   }, [editor, draftContent]);
 
   function handleSend() {
@@ -65,11 +71,25 @@ export function ReplyComposer({
 
   return (
     <div className="border-t p-3">
-      <div className={cn("rounded-md border", sending && "opacity-60")}>
-        <EditorContent editor={editor} data-placeholder={placeholder} />
+      <div
+        className={cn(
+          "relative rounded-md border transition-[opacity,border-color] focus-within:border-ring",
+          sending && "opacity-60",
+        )}
+      >
+        {isEmpty && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute top-2 left-3 text-sm text-muted-foreground"
+          >
+            {placeholder}
+          </span>
+        )}
+        <EditorContent editor={editor} aria-label={placeholder} />
       </div>
       <div className="mt-2 flex justify-end">
-        <Button onClick={handleSend} disabled={!editor || editor.isEmpty || sending}>
+        <Button onClick={handleSend} disabled={!editor || isEmpty || sending}>
+          {sending && <Loader2 className="animate-spin" aria-hidden="true" />}
           {sending ? "Sending…" : "Send"}
         </Button>
       </div>

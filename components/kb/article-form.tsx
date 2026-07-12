@@ -15,6 +15,7 @@ export function ArticleForm({ article }: { article?: KbArticle }) {
   const [title, setTitle] = useState(article?.title ?? "");
   const [published, setPublished] = useState(article?.published ?? false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const editor = useEditor({
@@ -44,7 +45,12 @@ export function ArticleForm({ article }: { article?: KbArticle }) {
   async function handleDelete() {
     if (!article) return;
     if (!confirm("Delete this article? This cannot be undone.")) return;
-    await deleteArticle(article.id);
+    setDeleting(true);
+    try {
+      await deleteArticle(article.id);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -74,11 +80,11 @@ export function ArticleForm({ article }: { article?: KbArticle }) {
         </div>
         <div className="flex gap-2">
           {article && (
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
+            <Button variant="destructive" onClick={handleDelete} disabled={saving || deleting}>
+              {deleting ? "Deleting…" : "Delete"}
             </Button>
           )}
-          <Button onClick={handleSave} disabled={saving || !title.trim()}>
+          <Button onClick={handleSave} disabled={saving || deleting || !title.trim()}>
             {saving ? "Saving…" : "Save"}
           </Button>
         </div>

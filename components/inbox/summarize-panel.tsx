@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -44,6 +45,11 @@ export function SummarizePanel({ conversationId }: { conversationId: string }) {
     return (
       <div className="border-b p-3">
         <Button variant="outline" size="sm" onClick={handleSummarize} disabled={loading}>
+          {loading ? (
+            <Loader2 className="animate-spin" aria-hidden="true" />
+          ) : (
+            <Sparkles aria-hidden="true" />
+          )}
           {loading ? "Summarizing…" : "Summarize"}
         </Button>
       </div>
@@ -55,6 +61,7 @@ export function SummarizePanel({ conversationId }: { conversationId: string }) {
       <div className="flex items-center justify-between">
         <Badge className={SENTIMENT_CLASSES[summary.sentiment]}>{summary.sentiment}</Badge>
         <Button variant="ghost" size="sm" onClick={handleSummarize} disabled={loading}>
+          {loading && <Loader2 className="animate-spin" aria-hidden="true" />}
           {loading ? "Refreshing…" : "Refresh"}
         </Button>
       </div>

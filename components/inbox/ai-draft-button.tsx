@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { Loader2, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Stretch feature: fills the composer with an AI-generated draft the agent must review before
@@ -31,6 +32,11 @@ export function AiDraftButton({
 
   return (
     <Button type="button" variant="outline" size="sm" onClick={handleClick} disabled={loading}>
+      {loading ? (
+        <Loader2 className="animate-spin" aria-hidden="true" />
+      ) : (
+        <WandSparkles aria-hidden="true" />
+      )}
       {loading ? "Drafting…" : "AI draft"}
     </Button>
   );
