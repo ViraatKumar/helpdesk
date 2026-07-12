@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import type { WorkspaceRole, Workspace } from "@/lib/types";
 
@@ -23,6 +24,7 @@ export type WorkspaceContextLookup =
 // team). A workspace switcher for users in multiple workspaces is a documented "one more week" item.
 export async function fetchWorkspaceContext(): Promise<WorkspaceContextLookup> {
   const supabase = await createClient();
+  const cookieStore = await cookies();
 
   const {
     data: { user },
@@ -30,21 +32,49 @@ export async function fetchWorkspaceContext(): Promise<WorkspaceContextLookup> {
 
   if (!user) return { status: "unauthenticated" };
 
-  const { data: membership } = await supabase
+  // Prioritize active workspace from cookie if it exists
+  const activeWorkspaceId = cookieStore.get("helpdesk_workspace_id")?.value;
+  let membershipQuery = supabase
     .from("workspace_members")
-    .select("role, workspace_id, workspaces(*)")
-    .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
+    .select("role, workspace_id")
+    .eq("user_id", user.id);
 
-  if (!membership || !membership.workspaces) return { status: "no_workspace" };
+  if (activeWorkspaceId) {
+    membershipQuery = membershipQuery.eq("workspace_id", activeWorkspaceId);
+  }
+
+  const { data: memberships, error: memError } = await membershipQuery;
+
+  // If no membership found for the cookie, fall back to any available membership
+  let membership = memberships && memberships.length > 0 ? memberships[0] : null;
+
+  if (!membership && activeWorkspaceId) {
+    const { data: fallbackMemberships } = await supabase
+      .from("workspace_members")
+      .select("role, workspace_id")
+      .eq("user_id", user.id)
+      .limit(1);
+    if (fallbackMemberships && fallbackMemberships.length > 0) {
+      membership = fallbackMemberships[0];
+    }
+  }
+
+  if (!membership) return { status: "no_workspace" };
+
+  const { data: workspace, error: wsError } = await supabase
+    .from("workspaces")
+    .select("*")
+    .eq("id", membership.workspace_id)
+    .single();
+
+  if (!workspace) return { status: "no_workspace" };
 
   return {
     status: "ok",
     context: {
       userId: user.id,
       userEmail: user.email!,
-      workspace: membership.workspaces as unknown as Workspace,
+      workspace: workspace as unknown as Workspace,
       role: membership.role as WorkspaceRole,
     },
   };

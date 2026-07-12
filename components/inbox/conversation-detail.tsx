@@ -36,6 +36,7 @@ export function ConversationDetail({
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [contactTyping, setContactTyping] = useState(false);
+  const [contactOnline, setContactOnline] = useState(false);
   const [draft, setDraft] = useState<string | null>(null);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
 
@@ -71,7 +72,9 @@ export function ConversationDetail({
   useEffect(() => {
     const supabase = createClient();
     const channel: RealtimeChannel = supabase
-      .channel(conversationChannelName(conversationId))
+      .channel(conversationChannelName(conversationId), {
+        config: { presence: { key: currentUserId } },
+      })
       .on("broadcast", { event: "new_message" }, ({ payload }) => {
         const incoming = payload.message as Message;
         setMessages((prev) => (prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]));
@@ -86,7 +89,24 @@ export function ConversationDetail({
         if (contactTypingTimeoutRef.current) clearTimeout(contactTypingTimeoutRef.current);
         contactTypingTimeoutRef.current = setTimeout(() => setContactTyping(false), 3000);
       })
-      .subscribe();
+      .on("broadcast", { event: "read_receipt" }, ({ payload }) => {
+        const { message_ids } = payload;
+        setMessages((prev) =>
+          prev.map((m) => (message_ids.includes(m.id) ? { ...m, read_at: new Date().toISOString() } : m))
+        );
+      })
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState<{ userType: string }>();
+        const isOnline = Object.values(state).some((presences) =>
+          presences.some((p) => p.userType === "contact")
+        );
+        setContactOnline(isOnline);
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          channel.track({ userType: "agent" });
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -128,9 +148,16 @@ export function ConversationDetail({
         <div className="flex min-w-0 items-center gap-2.5">
           <span
             aria-hidden="true"
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary relative"
           >
             {initialsFor(contactLabel)}
+            {contactOnline && (
+              <span
+                className="absolute right-0 bottom-0 size-2.5 rounded-full bg-success ring-2 ring-background"
+                aria-hidden="true"
+                title="Online"
+              />
+            )}
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{contactLabel}</p>
@@ -196,15 +223,23 @@ export function ConversationDetail({
             key={message.id}
             className={`flex ${message.sender_type === "agent" ? "justify-end" : "justify-start"}`}
           >
-            <div
-              title={new Date(message.created_at).toLocaleString()}
-              className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap ${
-                message.sender_type === "agent"
-                  ? "rounded-br-md bg-primary text-primary-foreground"
-                  : "rounded-bl-md border bg-card"
-              }`}
-            >
-              {message.body}
+            <div className="flex flex-col gap-1 max-w-[75%]">
+              <div
+                title={new Date(message.created_at).toLocaleString()}
+                className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap ${
+                  message.sender_type === "agent"
+                    ? "rounded-br-md bg-primary text-primary-foreground"
+                    : "rounded-bl-md border bg-card"
+                }`}
+              >
+                {message.body}
+              </div>
+              {message.sender_type === "agent" && message.read_at && (
+                <span className="text-[10px] text-muted-foreground self-end px-1 flex items-center gap-1">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>
+                  Read
+                </span>
+              )}
             </div>
           </div>
         ))}

@@ -21,7 +21,6 @@ function slugify(name: string): string {
 export async function signUp(formData: FormData): Promise<AuthActionResult> {
   const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
-  const workspaceName = String(formData.get("workspaceName") || "").trim();
 
   if (!email || !password) {
     return { error: "Email and password are required." };
@@ -38,26 +37,6 @@ export async function signUp(formData: FormData): Promise<AuthActionResult> {
   // a live project to configure, we handle both outcomes rather than assuming one.
   if (!data.session) {
     return { needsEmailConfirmation: true };
-  }
-
-  // The on_auth_user_created_link_invites trigger (migration 0004) has already run by this point and
-  // linked any pending workspace_invites for this email. Only create a new workspace if the user
-  // didn't just join one via invite AND supplied a workspace name.
-  const { data: existingMembership } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", data.user!.id)
-    .maybeSingle();
-
-  if (!existingMembership && workspaceName) {
-    const slug = `${slugify(workspaceName)}-${data.user!.id.slice(0, 6)}`;
-    const { error: rpcError } = await supabase.rpc("create_workspace_with_owner", {
-      workspace_name: workspaceName,
-      workspace_slug: slug,
-    });
-    if (rpcError) {
-      return { error: `Account created, but workspace setup failed: ${rpcError.message}` };
-    }
   }
 
   redirect("/app/inbox");

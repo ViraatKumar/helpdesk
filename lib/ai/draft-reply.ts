@@ -1,5 +1,5 @@
 import "server-only";
-import { createAnthropicClient, ANTHROPIC_MODEL } from "@/lib/ai/client";
+import { createGeminiClient, GEMINI_MODEL } from "@/lib/ai/client";
 
 interface TranscriptMessage {
   sender_type: "contact" | "agent";
@@ -15,7 +15,7 @@ export async function generateReplyDraft(
   messages: TranscriptMessage[],
   kbArticleTitles: string[],
 ): Promise<string> {
-  const anthropic = createAnthropicClient();
+  const gemini = createGeminiClient();
 
   const transcript = messages
     .map((m) => `${m.sender_type === "agent" ? "Agent" : "Customer"}: ${m.body}`)
@@ -28,17 +28,15 @@ export async function generateReplyDraft(
       : "No KB articles available.",
   ].join("\n\n");
 
-  const response = await anthropic.messages.create({
-    model: ANTHROPIC_MODEL,
-    max_tokens: 400,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: context }],
+  const response = await gemini.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: context,
+    config: { systemInstruction: SYSTEM_PROMPT },
   });
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Anthropic returned no text content.");
+  if (!response.text) {
+    throw new Error("Gemini returned no text content.");
   }
 
-  return textBlock.text.trim();
+  return response.text.trim();
 }

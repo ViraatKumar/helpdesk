@@ -37,6 +37,7 @@ export function ChatWidget({
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [agentTyping, setAgentTyping] = useState(false);
+  const [agentOnline, setAgentOnline] = useState(false);
   const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [emailInput, setEmailInput] = useState("");
   const [savingEmail, setSavingEmail] = useState(false);
@@ -67,16 +68,35 @@ export function ChatWidget({
       .finally(() => setInitializing(false));
   }, [workspaceSlug]);
 
+  const markAgentMessagesRead = useCallback(async (convId: string, contId: string) => {
+    try {
+      await fetch("/api/widget/messages/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: convId, contactId: contId }),
+      });
+    } catch {
+      // ignore silently
+    }
+  }, []);
+
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !contactId) return;
+
+    markAgentMessagesRead(conversationId, contactId);
 
     const supabase = createClient();
     const channel = supabase
-      .channel(conversationChannelName(conversationId))
+      .channel(conversationChannelName(conversationId), {
+        config: { presence: { key: contactId } },
+      })
       .on("broadcast", { event: "new_message" }, ({ payload }) => {
         const incoming = payload.message as Message;
         setMessages((prev) => (prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]));
-        if (incoming.sender_type === "agent") setAgentTyping(false);
+        if (incoming.sender_type === "agent") {
+          setAgentTyping(false);
+          markAgentMessagesRead(conversationId, contactId);
+        }
       })
       .on("broadcast", { event: "typing" }, ({ payload }) => {
         if (payload.from !== "agent") return;
@@ -84,7 +104,24 @@ export function ChatWidget({
         if (agentTypingTimeoutRef.current) clearTimeout(agentTypingTimeoutRef.current);
         agentTypingTimeoutRef.current = setTimeout(() => setAgentTyping(false), 3000);
       })
-      .subscribe();
+      .on("broadcast", { event: "read_receipt" }, ({ payload }) => {
+        const { message_ids } = payload;
+        setMessages((prev) =>
+          prev.map((m) => (message_ids.includes(m.id) ? { ...m, read_at: new Date().toISOString() } : m))
+        );
+      })
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState<{ userType: string }>();
+        const isOnline = Object.values(state).some((presences) =>
+          presences.some((p) => p.userType === "agent")
+        );
+        setAgentOnline(isOnline);
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          channel.track({ userType: "contact" });
+        }
+      });
 
     channelRef.current = channel;
     return () => {
@@ -168,14 +205,21 @@ export function ChatWidget({
               {workspaceName.charAt(0).toUpperCase()}
             </span>
             <span
-              className="absolute right-0 bottom-0 size-2.5 rounded-full bg-success ring-2 ring-primary"
+              className={`absolute right-0 bottom-0 size-2.5 rounded-full ${
+                agentOnline ? "bg-success" : "bg-muted"
+              } ring-2 ring-primary transition-colors`}
               aria-hidden="true"
+              title={agentOnline ? "Online" : "Offline"}
             />
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{workspaceName}</p>
             <p className="truncate text-xs opacity-80">
-              {contactEmail ? `Chatting as ${contactEmail}` : "We usually reply in a few minutes"}
+              {agentOnline
+                ? "Agent is online"
+                : contactEmail
+                ? `Chatting as ${contactEmail}`
+                : "We usually reply in a few minutes"}
             </p>
           </div>
         </div>
@@ -213,14 +257,22 @@ export function ChatWidget({
             key={message.id}
             className={`flex ${message.sender_type === "contact" ? "justify-end" : "justify-start"}`}
           >
-            <div
-              className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap ${
-                message.sender_type === "contact"
-                  ? "rounded-br-md bg-primary text-primary-foreground"
-                  : "rounded-bl-md bg-muted text-foreground"
-              }`}
-            >
-              {message.body}
+            <div className="flex flex-col gap-1 max-w-[80%]">
+              <div
+                className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap ${
+                  message.sender_type === "contact"
+                    ? "rounded-br-md bg-primary text-primary-foreground"
+                    : "rounded-bl-md bg-muted text-foreground"
+                }`}
+              >
+                {message.body}
+              </div>
+              {message.sender_type === "contact" && message.read_at && (
+                <span className="text-[10px] text-muted-foreground self-end px-1 flex items-center gap-1">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>
+                  Read
+                </span>
+              )}
             </div>
           </div>
         ))}

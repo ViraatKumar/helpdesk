@@ -56,7 +56,8 @@ export function InboxShell({
     const channel = supabase
       .channel(workspaceChannelName(workspaceId))
       .on("broadcast", { event: "conversation_updated" }, () => {
-        refreshRef.current();
+        // refreshRef.current();
+        console.log("conversation_updated received!");
       })
       .subscribe();
 

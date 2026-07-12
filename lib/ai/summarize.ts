@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { createAnthropicClient, stripCodeFences, ANTHROPIC_MODEL } from "@/lib/ai/client";
+import { createGeminiClient, stripCodeFences, GEMINI_MODEL } from "@/lib/ai/client";
 
 const summarySchema = z.object({
   summary: z.string(),
@@ -31,20 +31,21 @@ function renderTranscript(messages: TranscriptMessage[]): string {
 export async function generateConversationSummary(
   messages: TranscriptMessage[],
 ): Promise<ConversationSummaryPayload> {
-  const anthropic = createAnthropicClient();
+  const gemini = createGeminiClient();
 
-  const response = await anthropic.messages.create({
-    model: ANTHROPIC_MODEL,
-    max_tokens: 500,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: renderTranscript(messages) }],
+  const response = await gemini.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: renderTranscript(messages),
+    config: {
+      systemInstruction: SYSTEM_PROMPT,
+      responseMimeType: "application/json",
+    },
   });
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Anthropic returned no text content.");
+  if (!response.text) {
+    throw new Error("Gemini returned no text content.");
   }
 
-  const parsed = JSON.parse(stripCodeFences(textBlock.text));
+  const parsed = JSON.parse(stripCodeFences(response.text));
   return summarySchema.parse(parsed);
 }

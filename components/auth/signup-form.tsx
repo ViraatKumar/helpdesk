@@ -24,10 +24,6 @@ export function SignupForm() {
   return (
     <form action={formAction} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="workspaceName">Workspace name</Label>
-        <Input id="workspaceName" name="workspaceName" placeholder="Acme Support" required />
-      </div>
-      <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" required autoComplete="email" />
       </div>
