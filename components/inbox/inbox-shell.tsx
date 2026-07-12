@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { workspaceChannelName } from "@/lib/realtime/channels";
 import { ConversationList } from "@/components/inbox/conversation-list";
-import { ConversationDetail } from "@/components/inbox/conversation-detail";
+import { ConversationDetailSkeleton } from "@/components/inbox/conversation-detail-skeleton";
 import { InboxFilters } from "@/components/inbox/inbox-filters";
 import type { ConversationWithContact } from "@/lib/types";
+
+// The detail pane pulls in tiptap (the single heaviest client dependency) plus the AI panels, none
+// of which are needed to render the list. Splitting it keeps the inbox's initial chunk small; the
+// skeleton fallback covers the one-time chunk fetch on first selection.
+const ConversationDetail = dynamic(
+  () => import("@/components/inbox/conversation-detail").then((m) => m.ConversationDetail),
+  { loading: () => <ConversationDetailSkeleton /> },
+);
 
 export function InboxShell({
   workspaceId,
