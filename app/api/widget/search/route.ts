@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   });
 
   // Limit to top 3
-  const topArticles = (articles ?? []).slice(0, 3).map(a => ({
+  const topArticles = (articles ?? []).slice(0, 3).map((a: { id: string; title: string }) => ({
     id: a.id,
     title: a.title,
     // We don't need body for suggestions, just link to it
