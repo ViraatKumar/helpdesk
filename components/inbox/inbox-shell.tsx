@@ -84,13 +84,13 @@ export function InboxShell({
   const detailPending = isSelecting && pendingId !== null && pendingId !== selectedId;
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between gap-3 border-b px-4 py-2.5">
-        <h1 className="text-sm font-semibold">Inbox</h1>
+    <div className="flex h-full flex-col bg-background">
+      <div className="flex items-center justify-between gap-3 border-b border-border/50 px-6 py-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] z-10">
+        <h1 className="text-base font-semibold tracking-tight">Inbox</h1>
         <InboxFilters filters={filters} members={members} />
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-80 shrink-0 overflow-y-auto border-r">
+        <div className="w-80 shrink-0 overflow-y-auto border-r border-border/50 bg-background/50">
           <ConversationList
             conversations={conversations}
             selectedId={highlightedId}

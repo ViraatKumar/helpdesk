@@ -67,14 +67,14 @@ export default async function KbAdminPage() {
                     <Link
                       key={article.id}
                       href={`/app/kb/${article.id}`}
-                      className="flex min-h-11 items-center justify-between rounded-md border px-3 py-2 text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+                      className="group flex min-h-14 items-center justify-between rounded-lg border border-border/50 bg-background/50 px-4 py-3 text-sm shadow-sm outline-none transition-all duration-200 hover:bg-muted/40 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
-                      <span className="truncate font-medium">{article.title || "Untitled"}</span>
-                      <div className="flex shrink-0 items-center gap-2">
+                      <span className="truncate font-medium text-foreground group-hover:text-primary transition-colors">{article.title || "Untitled"}</span>
+                      <div className="flex shrink-0 items-center gap-3">
                         <Badge variant={article.published ? "default" : "secondary"}>
                           {article.published ? "Published" : "Draft"}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground w-24 text-right">
                           {formatDistanceToNow(new Date(article.updated_at), { addSuffix: true })}
                         </span>
                       </div>
@@ -100,14 +100,14 @@ export default async function KbAdminPage() {
                   <Link
                     key={article.id}
                     href={`/app/kb/${article.id}`}
-                    className="flex min-h-11 items-center justify-between rounded-md border px-3 py-2 text-sm outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className="group flex min-h-14 items-center justify-between rounded-lg border border-border/50 bg-background/50 px-4 py-3 text-sm shadow-sm outline-none transition-all duration-200 hover:bg-muted/40 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
-                    <span className="truncate font-medium">{article.title || "Untitled"}</span>
-                    <div className="flex shrink-0 items-center gap-2">
+                    <span className="truncate font-medium text-foreground group-hover:text-primary transition-colors">{article.title || "Untitled"}</span>
+                    <div className="flex shrink-0 items-center gap-3">
                       <Badge variant={article.published ? "default" : "secondary"}>
                         {article.published ? "Published" : "Draft"}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground w-24 text-right">
                         {formatDistanceToNow(new Date(article.updated_at), { addSuffix: true })}
                       </span>
                     </div>

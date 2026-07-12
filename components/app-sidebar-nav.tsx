@@ -29,14 +29,14 @@ export function AppSidebarNav() {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-2 outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50",
+              "flex items-center gap-3 rounded-md px-3 py-2.5 outline-none transition-all duration-200 focus-visible:ring-3 focus-visible:ring-ring/50",
               active
-                ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+                ? "bg-sidebar-accent/50 font-medium text-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-sidebar-accent/30 hover:text-foreground",
             )}
           >
             <Icon
-              className={cn("size-4 shrink-0", active && "text-primary")}
+              className={cn("size-4 shrink-0 transition-colors", active ? "text-primary" : "text-muted-foreground/70 group-hover:text-foreground")}
               aria-hidden="true"
             />
             {label}

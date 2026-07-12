@@ -9,9 +9,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const context = await requireWorkspaceContext();
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-        <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-3.5">
+    <div className="flex h-screen overflow-hidden bg-background">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-border/50 bg-sidebar text-sidebar-foreground">
+        <div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
             <LifeBuoy className="size-4.5" aria-hidden="true" />
           </div>
@@ -22,24 +22,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <p className="text-[11px] capitalize text-muted-foreground">{context.role}</p>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-3">
+        <div className="flex-1 overflow-y-auto p-4">
           <AppSidebarNav />
         </div>
-        <div className="border-t border-sidebar-border p-3">
+        <div className="border-t border-border/50 p-4">
           <form action={signOut}>
             <Button
               type="submit"
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+              className="w-full justify-start gap-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             >
-              <LogOut aria-hidden="true" />
+              <LogOut aria-hidden="true" className="size-4" />
               Sign out
             </Button>
           </form>
         </div>
       </aside>
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="flex-1 overflow-y-auto bg-background">{children}</main>
       <Toaster />
     </div>
   );

@@ -156,7 +156,7 @@ export function ConversationDetail({
   return (
     <div className="flex h-full">
       <div className="flex h-full min-w-0 flex-1 flex-col">
-      <header className="flex items-center justify-between gap-3 border-b p-3">
+      <header className="flex items-center justify-between gap-3 border-b border-border/50 p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.02)] z-10">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
             aria-hidden="true"
@@ -231,7 +231,7 @@ export function ConversationDetail({
         ref={scrollRef}
         role="log"
         aria-label={`Conversation with ${contactLabel}`}
-        className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-4"
+        className="flex-1 space-y-4 overflow-y-auto bg-background/50 p-6"
       >
         {messages.map((message) => (
           <div
@@ -310,7 +310,7 @@ export function ConversationDetail({
 
       <aside
         aria-label="Contact timeline"
-        className="hidden w-72 shrink-0 overflow-y-auto border-l xl:block"
+        className="hidden w-72 shrink-0 overflow-y-auto border-l border-border/50 bg-background/50 xl:block"
       >
         <ContactTimelinePanel
           contact={conversation.contact}

@@ -39,13 +39,10 @@ export function ConversationList({
               onClick={() => onSelect(conversation.id)}
               aria-current={selected ? "true" : undefined}
               className={cn(
-                "relative block min-h-11 w-full cursor-pointer border-b px-3 py-3 text-left text-sm outline-none transition-colors hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-accent/70",
-                selected && "bg-accent/70",
+                "relative block min-h-11 w-full cursor-pointer border-b border-border/40 px-4 py-4 text-left text-sm outline-none transition-all duration-200 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/60",
+                selected && "bg-muted/60 shadow-[inset_3px_0_0_0_var(--color-primary)]",
               )}
             >
-              {selected && (
-                <span className="absolute inset-y-0 left-0 w-0.5 bg-primary" aria-hidden="true" />
-              )}
               <div className="flex items-start gap-2.5">
                 <span
                   aria-hidden="true"
