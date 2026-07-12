@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -36,6 +36,12 @@ export function InboxShell({
   const searchParams = useSearchParams();
   const selectedId = searchParams.get("c");
 
+  // Selection is URL-driven, so the highlight would otherwise wait a full server round-trip after
+  // a click. Track the clicked id locally for instant feedback and show the detail skeleton while
+  // the navigation transition is in flight.
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [isSelecting, startSelecting] = useTransition();
+
   // Filters are query params → WHERE clauses on the server; this refetches the list from the DB
   // (RLS-scoped) whenever another agent's action changes it, rather than trying to patch client
   // state in place.
@@ -59,10 +65,17 @@ export function InboxShell({
   }, [workspaceId]);
 
   function selectConversation(id: string) {
+    if (id === selectedId) return;
+    setPendingId(id);
     const params = new URLSearchParams(searchParams.toString());
     params.set("c", id);
-    router.push(`${pathname}?${params.toString()}`);
+    startSelecting(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
   }
+
+  const highlightedId = isSelecting && pendingId ? pendingId : selectedId;
+  const detailPending = isSelecting && pendingId !== null && pendingId !== selectedId;
 
   return (
     <div className="flex h-screen flex-col">
@@ -71,12 +84,14 @@ export function InboxShell({
         <div className="w-80 shrink-0 overflow-y-auto border-r">
           <ConversationList
             conversations={conversations}
-            selectedId={selectedId}
+            selectedId={highlightedId}
             onSelect={selectConversation}
           />
         </div>
         <div className="flex-1 overflow-hidden">
-          {selectedId ? (
+          {detailPending ? (
+            <ConversationDetailSkeleton />
+          ) : selectedId ? (
             <ConversationDetail
               key={selectedId}
               conversationId={selectedId}

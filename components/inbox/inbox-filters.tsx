@@ -1,6 +1,8 @@
 "use client";
 
+import { useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -19,6 +21,7 @@ export function InboxFilters({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   function setFilter(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -28,11 +31,15 @@ export function InboxFilters({
       params.set(key, value);
     }
     params.delete("c");
-    router.push(`${pathname}?${params.toString()}`);
+    // The transition keeps the current list visible while the filtered query runs; isPending
+    // drives the spinner so the change never feels ignored.
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
   }
 
   return (
-    <div className="flex items-center gap-2 border-b p-3">
+    <div className="flex items-center gap-2 border-b p-3" aria-busy={isPending}>
       <Select value={filters.status} onValueChange={(v) => v && setFilter("status", v)}>
         <SelectTrigger className="w-32" aria-label="Filter by status">
           <SelectValue />
@@ -71,6 +78,14 @@ export function InboxFilters({
           ))}
         </SelectContent>
       </Select>
+
+      {isPending && (
+        <Loader2
+          className="size-4 animate-spin text-muted-foreground"
+          aria-label="Updating conversations"
+          role="status"
+        />
+      )}
     </div>
   );
 }
