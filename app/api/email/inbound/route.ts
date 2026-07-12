@@ -10,6 +10,7 @@ import {
 } from "@/lib/email/threading";
 import { broadcast } from "@/lib/realtime/broadcast";
 import { conversationChannelName, workspaceChannelName } from "@/lib/realtime/channels";
+import { dispatchWebhookEvent } from "@/lib/webhooks/dispatch";
 
 const UNIQUE_VIOLATION = "23505";
 
@@ -186,6 +187,8 @@ export async function POST(request: Request) {
   await broadcast(workspaceChannelName(workspace.id), "conversation_updated", {
     conversation_id: conversationId,
   });
+
+  dispatchWebhookEvent(workspace.id, "message.created", message);
 
   return NextResponse.json({ ok: true });
 }

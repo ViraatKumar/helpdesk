@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
 import { broadcast } from "@/lib/realtime/broadcast";
 import { conversationChannelName, workspaceChannelName } from "@/lib/realtime/channels";
+import { dispatchWebhookEvent } from "@/lib/webhooks/dispatch";
 
 const bodySchema = z.object({
   conversationId: z.string().uuid(),
@@ -32,6 +33,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
   }
 
+  const { count: messageCount } = await supabase
+    .from("messages")
+    .select("*", { count: "exact", head: true })
+    .eq("conversation_id", conversationId);
+
+  if (messageCount !== null && messageCount >= 10) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Maximum messages per conversation reached." },
+      { status: 429 }
+    );
+  }
+
   const { data: message, error } = await supabase
     .from("messages")
     .insert({ conversation_id: conversationId, sender_type: "contact", sender_id: contactId, body })
@@ -51,6 +64,9 @@ export async function POST(request: Request) {
   await broadcast(workspaceChannelName(conversation.workspace_id), "conversation_updated", {
     conversation_id: conversationId,
   });
+
+  // Fire webhook in background
+  dispatchWebhookEvent(conversation.workspace_id, "message.created", message);
 
   return NextResponse.json({ message });
 }

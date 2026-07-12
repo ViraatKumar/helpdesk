@@ -62,6 +62,18 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (!conversation) {
+    const { count: conversationCount } = await supabase
+      .from("conversations")
+      .select("*", { count: "exact", head: true })
+      .eq("contact_id", contact.id);
+
+    if (conversationCount !== null && conversationCount >= 10) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Maximum conversations per contact reached." },
+        { status: 429 }
+      );
+    }
+
     const { data: newConversation, error } = await supabase
       .from("conversations")
       .insert({ workspace_id: workspace.id, contact_id: contact.id, channel: "chat" })

@@ -119,3 +119,23 @@ export interface CannedResponse {
 export interface ConversationWithContact extends Conversation {
   contact: Contact;
 }
+
+export interface ApiKey {
+  id: string;
+  workspace_id: string;
+  name: string;
+  key_hash: string;
+  prefix: string;
+  created_at: string;
+  revoked_at: string | null;
+}
+
+export interface Webhook {
+  id: string;
+  workspace_id: string;
+  url: string;
+  secret: string;
+  events: string[];
+  active: boolean;
+  created_at: string;
+}

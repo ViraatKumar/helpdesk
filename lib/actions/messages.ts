@@ -7,6 +7,7 @@ import { conversationChannelName, workspaceChannelName } from "@/lib/realtime/ch
 import { sendReplyEmail } from "@/lib/email/send";
 import { buildReplySubject, buildOutboundReferences } from "@/lib/email/threading";
 import { escapeHtml } from "@/lib/utils";
+import { dispatchWebhookEvent } from "@/lib/webhooks/dispatch";
 
 export interface SendReplyResult {
   error?: string;
@@ -104,6 +105,8 @@ export async function sendAgentReply(
   await broadcast(workspaceChannelName(context.workspace.id), "conversation_updated", {
     conversation_id: conversationId,
   });
+
+  dispatchWebhookEvent(context.workspace.id, "message.created", message);
 
   return {};
 }
