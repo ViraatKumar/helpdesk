@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getURL } from "@/lib/utils";
 
 export interface AuthActionResult {
   error?: string;
@@ -27,7 +28,7 @@ export async function signUp(formData: FormData): Promise<AuthActionResult> {
   }
 
   const supabase = await createClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = getURL();
   const { data, error } = await supabase.auth.signUp({ 
     email, 
     password,

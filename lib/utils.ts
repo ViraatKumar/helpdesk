@@ -26,3 +26,22 @@ export function initialsFor(label: string): string {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
+
+export function getURL(): string {
+  let url =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXT_PUBLIC_VERCEL_URL ??
+    "https://helpdesk-lhtmnyydz-viraatprojects.vercel.app";
+
+  url = url.includes("http") ? url : `https://${url}`;
+  // Remove trailing slash if present to make appending paths easier
+  url = url.endsWith("/") ? url.slice(0, -1) : url;
+  
+  // If we are in local development and not explicitly setting an APP URL, use localhost
+  if (process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_APP_URL) {
+    url = "http://localhost:3000";
+  }
+
+  return url;
+}
