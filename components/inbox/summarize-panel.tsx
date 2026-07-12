@@ -12,11 +12,8 @@ interface Summary {
   suggested_action: string;
 }
 
-// Neutral/negative map to theme tokens; positive keeps an emerald accent with an explicit dark
-// variant since the palette has no "success" token.
 const SENTIMENT_CLASSES: Record<Summary["sentiment"], string> = {
-  positive:
-    "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-400",
+  positive: "bg-success/10 text-success hover:bg-success/10 dark:bg-success/15",
   neutral: "bg-muted text-muted-foreground hover:bg-muted",
   negative: "bg-destructive/10 text-destructive hover:bg-destructive/10 dark:bg-destructive/20",
 };
