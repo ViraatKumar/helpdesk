@@ -1,3 +1,4 @@
+import { LifeBuoy, LogOut } from "lucide-react";
 import { requireWorkspaceContext } from "@/lib/auth/session";
 import { signOut } from "@/lib/actions/auth";
 import { AppSidebarNav } from "@/components/app-sidebar-nav";
@@ -8,20 +9,37 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const context = await requireWorkspaceContext();
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="flex w-56 shrink-0 flex-col border-r bg-muted/20 p-4">
-        <div className="mb-6 px-2">
-          <p className="truncate text-sm font-semibold">{context.workspace.name}</p>
-          <p className="text-xs capitalize text-muted-foreground">{context.role}</p>
+    <div className="flex h-screen overflow-hidden">
+      <aside className="flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+        <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-3.5">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+            <LifeBuoy className="size-4.5" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm leading-tight font-semibold">
+              {context.workspace.name}
+            </p>
+            <p className="text-[11px] capitalize text-muted-foreground">{context.role}</p>
+          </div>
         </div>
-        <AppSidebarNav />
-        <form action={signOut}>
-          <Button type="submit" variant="ghost" size="sm" className="w-full justify-start">
-            Sign out
-          </Button>
-        </form>
+        <div className="flex-1 overflow-y-auto p-3">
+          <AppSidebarNav />
+        </div>
+        <div className="border-t border-sidebar-border p-3">
+          <form action={signOut}>
+            <Button
+              type="submit"
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <LogOut aria-hidden="true" />
+              Sign out
+            </Button>
+          </form>
+        </div>
       </aside>
-      <main className="flex-1 overflow-hidden">{children}</main>
+      <main className="flex-1 overflow-y-auto">{children}</main>
       <Toaster />
     </div>
   );
