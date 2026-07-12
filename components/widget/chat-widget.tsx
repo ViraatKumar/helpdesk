@@ -158,12 +158,26 @@ export function ChatWidget({
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      <header className="flex items-center justify-between border-b bg-primary px-4 py-3 text-primary-foreground">
-        <div>
-          <p className="text-sm font-semibold">{workspaceName}</p>
-          <p className="text-xs opacity-80">
-            {contactEmail ? `Chatting as ${contactEmail}` : "We usually reply in a few minutes"}
-          </p>
+      <header className="flex items-center justify-between gap-3 border-b bg-primary px-4 py-3 text-primary-foreground">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="relative shrink-0">
+            <span
+              aria-hidden="true"
+              className="flex size-9 items-center justify-center rounded-full bg-primary-foreground/15 text-sm font-semibold"
+            >
+              {workspaceName.charAt(0).toUpperCase()}
+            </span>
+            <span
+              className="absolute right-0 bottom-0 size-2.5 rounded-full bg-success ring-2 ring-primary"
+              aria-hidden="true"
+            />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">{workspaceName}</p>
+            <p className="truncate text-xs opacity-80">
+              {contactEmail ? `Chatting as ${contactEmail}` : "We usually reply in a few minutes"}
+            </p>
+          </div>
         </div>
         <button
           onClick={closeWidget}
