@@ -28,7 +28,7 @@ export default async function TeamSettingsPage() {
   const canManage = context.role === "owner" || context.role === "admin";
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
+    <div className="mx-auto max-w-2xl p-8 animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none">
       <h1 className="text-xl font-semibold">Team</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Owners and admins manage the team. Agents have inbox-only access.

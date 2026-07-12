@@ -16,7 +16,7 @@ export default async function KbAdminPage() {
     .order("updated_at", { ascending: false });
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
+    <div className="mx-auto max-w-2xl p-8 animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Knowledge Base</h1>

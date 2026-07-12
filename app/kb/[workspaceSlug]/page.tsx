@@ -50,7 +50,7 @@ export default async function PublicKbPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16">
+    <div className="mx-auto max-w-2xl px-6 py-16 animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none">
       <h1 className="text-3xl font-bold">{workspace.name} Help Center</h1>
       <div className="mt-6">
         <KbSearchForm workspaceSlug={workspaceSlug} defaultValue={q ?? ""} />

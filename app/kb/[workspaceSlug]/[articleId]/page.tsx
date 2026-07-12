@@ -31,7 +31,7 @@ export default async function PublicKbArticlePage({
   if (!article) notFound();
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16">
+    <div className="mx-auto max-w-2xl px-6 py-16 animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none">
       <Link
         href={`/kb/${workspaceSlug}`}
         className="inline-flex min-h-11 items-center rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
