@@ -7,6 +7,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Message } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ANON_ID_KEY = "helpdesk_widget_anon_id";
 const TYPING_DEBOUNCE_MS = 2000;
@@ -32,10 +33,13 @@ export function ChatWidget({
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [initializing, setInitializing] = useState(true);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [agentTyping, setAgentTyping] = useState(false);
   const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [emailInput, setEmailInput] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -59,7 +63,8 @@ export function ChatWidget({
         setConversationId(data.conversationId);
         setMessages(data.messages ?? []);
         setShowEmailCapture(!data.contactEmail);
-      });
+      })
+      .finally(() => setInitializing(false));
   }, [workspaceSlug]);
 
   useEffect(() => {
@@ -111,6 +116,7 @@ export function ChatWidget({
     if (!body || !conversationId || !contactId || sending) return;
 
     setSending(true);
+    setSendError(null);
     setInput("");
     try {
       const res = await fetch("/api/widget/messages", {
@@ -121,20 +127,29 @@ export function ChatWidget({
       if (!res.ok) throw new Error("send failed");
       // why no optimistic append: the broadcast echo (below) round-trips in well under a second and
       // is the single source of truth for message ordering — appending locally too risks duplicates.
+    } catch {
+      // Put the message back so the visitor can retry without retyping it.
+      setInput(body);
+      setSendError("Couldn't send — check your connection and try again.");
     } finally {
       setSending(false);
     }
   }
 
   async function submitEmail() {
-    if (!contactId || !emailInput.trim()) return;
-    await fetch("/api/widget/identify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contactId, email: emailInput.trim() }),
-    });
-    setContactEmail(emailInput.trim());
-    setShowEmailCapture(false);
+    if (!contactId || !emailInput.trim() || savingEmail) return;
+    setSavingEmail(true);
+    try {
+      await fetch("/api/widget/identify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactId, email: emailInput.trim() }),
+      });
+      setContactEmail(emailInput.trim());
+      setShowEmailCapture(false);
+    } finally {
+      setSavingEmail(false);
+    }
   }
 
   function closeWidget() {
@@ -159,8 +174,22 @@ export function ChatWidget({
         </button>
       </header>
 
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
-        {messages.length === 0 && (
+      <div
+        ref={scrollRef}
+        role="log"
+        aria-label="Chat messages"
+        className="flex-1 space-y-3 overflow-y-auto p-4"
+      >
+        {initializing && (
+          <div className="space-y-3" aria-hidden="true">
+            <Skeleton className="h-9 w-3/5 rounded-2xl" />
+            <div className="flex justify-end">
+              <Skeleton className="h-9 w-2/5 rounded-2xl" />
+            </div>
+            <Skeleton className="h-9 w-1/2 rounded-2xl" />
+          </div>
+        )}
+        {!initializing && messages.length === 0 && (
           <p className="text-center text-sm text-muted-foreground">
             Send a message to start the conversation.
           </p>
@@ -185,7 +214,13 @@ export function ChatWidget({
       </div>
 
       {showEmailCapture && (
-        <div className="border-t bg-muted/30 p-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitEmail();
+          }}
+          className="border-t bg-muted/30 p-3"
+        >
           <p className="mb-2 text-xs text-muted-foreground">
             Leave your email so we can follow up if you step away.
           </p>
@@ -193,15 +228,24 @@ export function ChatWidget({
             <Input
               type="email"
               placeholder="you@example.com"
+              aria-label="Your email address"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
-              className="h-8 text-sm"
+              disabled={savingEmail}
+              required
+              className="h-11"
             />
-            <Button size="sm" onClick={submitEmail}>
-              Save
+            <Button type="submit" disabled={savingEmail || !emailInput.trim()} className="h-11 px-4">
+              {savingEmail ? "Saving…" : "Save"}
             </Button>
           </div>
-        </div>
+        </form>
+      )}
+
+      {sendError && (
+        <p role="alert" className="px-3 pb-1 text-xs text-destructive">
+          {sendError}
+        </p>
       )}
 
       <form
