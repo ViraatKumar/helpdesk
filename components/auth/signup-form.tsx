@@ -33,12 +33,8 @@ export function SignupForm() {
       </div>
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Creating account…" : "Create workspace"}
+        {pending ? "Creating account…" : "Create account"}
       </Button>
-      <p className="text-xs text-muted-foreground">
-        Already invited to a workspace? Sign up with the email your admin invited — you&apos;ll join
-        that workspace automatically instead of creating a new one.
-      </p>
     </form>
   );
 }

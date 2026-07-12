@@ -9,8 +9,8 @@ export default function SignupPage() {
       <BrandMark />
       <Card className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none">
         <CardHeader>
-          <CardTitle>Create your workspace</CardTitle>
-          <CardDescription>Start supporting customers in a couple of minutes.</CardDescription>
+          <CardTitle>Create an account</CardTitle>
+          <CardDescription>Create an account to get started.</CardDescription>
         </CardHeader>
         <CardContent>
           <SignupForm />
