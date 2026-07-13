@@ -1,0 +1,10 @@
+# Ignore environment variables and sensitive configurations
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Optional: You can also add other sensitive files/directories here
+# credentials/
+# secrets.json
